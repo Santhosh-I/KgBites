@@ -1,1 +1,16 @@
+# Environment-specific files
 venv/
+
+# Dependency directory
+node_modules/
+
+# Local environment variables
+.env
+.env.local
+
+# Vite cache
+.vite/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
