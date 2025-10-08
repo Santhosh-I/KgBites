@@ -44,17 +44,32 @@ body {
   margin: 0 auto;
 }
 
-/* Logo Section */
-.logo-image {
-  width: 28%;
-  height: 28%;
-  object-fit: contain;
-  border-radius: 30px;
-}
-
+/* Logo Section - Centered */
 .logo-section {
   text-align: center;
   margin-bottom: 35px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo-badge {
+  width: 60px;
+  height: 60px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 15px;
+  overflow: hidden;
+}
+
+.logo-image {
+  width: 120%;
+  height: 120%;
+  object-fit: contain;
+  padding: 4px;
 }
 
 .logo-text {
@@ -68,11 +83,13 @@ body {
   font-weight: 700;
   color: #1C1E26;
   margin-bottom: 4px;
+  text-align: center;
 }
 
 .brand-tagline {
   font-size: 13px;
   color: #888888;
+  text-align: center;
 }
 
 /* Form Header */
@@ -306,13 +323,18 @@ body {
     height: 50px;
   }
 
-  .logo-text {
-    font-size: 20px;
+  .logo-image {
+    padding: 3px;
   }
 
   .brand-name {
     font-size: 24px;
   }
+
+  .logo-text {
+    font-size: 20px;
+  }
+
 
   .form-title {
     font-size: 22px;
@@ -342,6 +364,24 @@ body {
 
   .logo-section {
     margin-bottom: 25px;
+  }
+
+  .logo-badge {
+    width: 45px;
+    height: 45px;
+    margin-bottom: 12px;
+  }
+
+  .logo-image {
+    padding: 3px;
+  }
+
+  .brand-name {
+    font-size: 22px;
+  }
+
+  .brand-tagline {
+    font-size: 12px;
   }
 
   .form-header {
@@ -384,11 +424,34 @@ body {
     padding: 25px 15px;
   }
 
+  .logo-badge {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 10px;
+  }
+
+  .logo-image {
+    padding: 2px;
+  }
+
   .brand-name {
-    font-size: 22px;
+    font-size: 20px;
   }
 
   .form-title {
     font-size: 20px;
+  }
+}
+
+/* Extra media query for large screens (optional) */
+@media (min-width: 1200px) {
+  .logo-badge {
+    width: 70px;
+    height: 70px;
+  }
+
+  .logo-image {
+    border-radius: 32%;
+    padding: 10px;
   }
 }
