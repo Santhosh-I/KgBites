@@ -79,10 +79,10 @@ WSGI_APPLICATION = 'kgbytes_source.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': '',
-        'USER': '',
+        'NAME': 'Kg_Bites',
+        'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': 'loalhost',
+        'HOST': 'localhost',
         'PORT': '5432'
     }
 }
