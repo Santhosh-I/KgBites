@@ -1,0 +1,15 @@
+# PostgreSQL DB dockerization
+
+version: '3.9'
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: KgBites_sri23
+      POSTGRES_PASSWORD: SRI232007
+      POSTGRES_DB: Kg_Bites
+    ports:
+      - 5432:5432
