@@ -14,3 +14,6 @@ node_modules/
 # Log files
 npm-debug.log*
 yarn-debug.log*
+
+# pycache ignore
+__pycache__/
