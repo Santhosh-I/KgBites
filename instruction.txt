@@ -1,0 +1,11 @@
+Add your DB user_name and password in .env file
+
+CONTENTS TO BE ADDED IN .env FILE:
+    DEBUG=True
+    DB_PASSWORD=your_db_password
+    DB_USER=your_db_username
+
+Then open Docker desktop application (keep it running)
+
+Run [docker compose up] command in /KgBites directory
+FOR ME: Srish@Sri23 MINGW64 /d/KgBites (main)
