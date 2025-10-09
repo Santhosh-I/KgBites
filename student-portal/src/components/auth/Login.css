@@ -54,8 +54,8 @@ body {
 }
 
 .logo-badge {
-  width: 60px;
-  height: 60px;
+  width: 80px;           /* Increased from 60px */
+  height: 80px;          /* Increased from 60px */
   background: #FFFFFF;
   border-radius: 12px;
   display: flex;
@@ -66,11 +66,12 @@ body {
 }
 
 .logo-image {
-  width: 120%;
-  height: 120%;
-  object-fit: contain;
-  padding: 4px;
+  width: 100%;           /* Changed from 120% */
+  height: 100%;          /* Keep at 100% */
+  object-fit: contain;   /* Maintains aspect ratio */
+  padding: 4px;          /* Adjust padding if needed */
 }
+
 
 .logo-text {
   font-size: 24px;
@@ -303,6 +304,17 @@ body {
   .auth-form-section {
     padding: 40px 30px;
   }
+  .auth-image-section {
+    display: none;
+  }
+  .logo-badge {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .logo-image {
+    padding: 2px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -319,13 +331,14 @@ body {
   }
 
   .logo-badge {
-    width: 50px;
-    height: 50px;
+    width: 90px;
+    height: 90px;
+  }
+  
+  .logo-image {
+    padding: 2px;
   }
 
-  .logo-image {
-    padding: 3px;
-  }
 
   .brand-name {
     font-size: 24px;
@@ -335,17 +348,13 @@ body {
     font-size: 20px;
   }
 
-
   .form-title {
     font-size: 22px;
   }
 
+  /* HIDE IMAGE SECTION ON TABLETS AND BELOW */
   .auth-image-section {
-    min-height: 200px;
-  }
-
-  .overlay-title {
-    font-size: 24px;
+    display: none;
   }
 
   .social-buttons {
@@ -367,13 +376,13 @@ body {
   }
 
   .logo-badge {
-    width: 45px;
-    height: 45px;
-    margin-bottom: 12px;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 15px;
   }
-
+  
   .logo-image {
-    padding: 3px;
+    padding: 2px;
   }
 
   .brand-name {
@@ -402,8 +411,9 @@ body {
     font-size: 14px;
   }
 
+  /* IMAGE SECTION ALREADY HIDDEN FROM PREVIOUS BREAKPOINT */
   .auth-image-section {
-    min-height: 180px;
+    display: none;
   }
 
   .image-overlay {
@@ -425,13 +435,13 @@ body {
   }
 
   .logo-badge {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 10px;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 12px;
   }
-
+  
   .logo-image {
-    padding: 2px;
+    padding: 1px;
   }
 
   .brand-name {
@@ -441,17 +451,31 @@ body {
   .form-title {
     font-size: 20px;
   }
+
+  /* IMAGE SECTION REMAINS HIDDEN */
+  .auth-image-section {
+    display: none;
+  }
 }
 
+
 /* Extra media query for large screens (optional) */
-@media (min-width: 1200px) {
+@media (min-width: 968px) {
   .logo-badge {
     width: 70px;
     height: 70px;
   }
 
   .logo-image {
-    border-radius: 32%;
     padding: 10px;
   }
+  .logo-badge {
+    width: 110px;
+    height: 110px;
+  }
+  
+  .logo-image {
+    padding: 2px;
+  }
 }
+

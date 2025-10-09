@@ -98,7 +98,7 @@ function Login() {
             {/* Logo Section */}
             <div className="logo-section">
               <div className="logo-badge">
-                <img src="/logo.png" alt="KgBites Logo" className="logo-image" />
+                <img src="/KGLogo.png" alt="KgBites Logo" className="logo-image" />
               </div>
               <h1 className="brand-name">KgBites</h1>
               <p className="brand-tagline">Canteen Food Ordering</p>
