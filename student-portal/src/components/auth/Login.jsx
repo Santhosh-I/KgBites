@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './Login.css';
 import { authAPI, tokenService } from '../../services/authService';
 import { useToast } from '../common/ToastProvider';
+import { useAuth } from '../../contexts/AuthContext';
 
 function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +16,7 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const { showSuccess, showError } = useToast();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,8 +85,10 @@ function Login() {
           showSuccess(`Welcome back, ${response.user.full_name || response.user.username}! 🎉`);
           console.log('Logged in user:', response.user);
           
-          // Here you can redirect to dashboard or handle successful login
-          // For now, we'll just clear the form
+          // Use AuthContext login method
+          login(response.user, response.token);
+          
+          // Clear form
           setFormData({
             name: '',
             email: '',
@@ -103,6 +107,9 @@ function Login() {
           
           showSuccess(`Account created successfully! Welcome to KgBites, ${response.user.full_name}! 🎉`);
           console.log('Registered user:', response.user);
+          
+          // Use AuthContext login method
+          login(response.user, response.token);
           
           // Clear form
           setFormData({
