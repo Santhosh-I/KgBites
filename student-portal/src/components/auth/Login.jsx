@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import './Login.css';
+import { authAPI, tokenService } from '../../services/authService';
+import { useToast } from '../common/ToastProvider';
 
 function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,6 +13,8 @@ function Login() {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const { showSuccess, showError } = useToast();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,20 +62,96 @@ function Login() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
 
     if (Object.keys(newErrors).length === 0) {
-      console.log('Form submitted:', formData);
-      alert(`${isLogin ? 'Login' : 'Registration'} successful!`);
-      setFormData({
-        name: '',
-        email: '',
-        rollNumber: '',
-        password: '',
-        confirmPassword: ''
-      });
+      setLoading(true);
+      try {
+        if (isLogin) {
+          // Login
+          const response = await authAPI.login({
+            username: formData.email,
+            password: formData.password
+          });
+          
+          // Store token and user data
+          tokenService.setToken(response.token);
+          tokenService.setUser(response.user);
+          
+          showSuccess(`Welcome back, ${response.user.full_name || response.user.username}! 🎉`);
+          console.log('Logged in user:', response.user);
+          
+          // Here you can redirect to dashboard or handle successful login
+          // For now, we'll just clear the form
+          setFormData({
+            name: '',
+            email: '',
+            rollNumber: '',
+            password: '',
+            confirmPassword: ''
+          });
+          
+        } else {
+          // Registration
+          const response = await authAPI.registerStudent(formData);
+          
+          // Store token and user data
+          tokenService.setToken(response.token);
+          tokenService.setUser(response.user);
+          
+          showSuccess(`Account created successfully! Welcome to KgBites, ${response.user.full_name}! 🎉`);
+          console.log('Registered user:', response.user);
+          
+          // Clear form
+          setFormData({
+            name: '',
+            email: '',
+            rollNumber: '',
+            password: '',
+            confirmPassword: ''
+          });
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
+        try {
+          const errorData = JSON.parse(error.message);
+          
+          // Handle Django validation errors
+          if (errorData.user) {
+            setErrors(errorData.user);
+            if (errorData.user.username) {
+              showError(`Username error: ${errorData.user.username[0]}`);
+            }
+            if (errorData.user.email) {
+              showError(`Email error: ${errorData.user.email[0]}`);
+            }
+          } else if (errorData.non_field_errors) {
+            const errorMsg = errorData.non_field_errors[0];
+            setErrors({ general: errorMsg });
+            showError(errorMsg);
+          } else if (errorData.roll_number) {
+            const errorMsg = errorData.roll_number[0];
+            setErrors({ rollNumber: errorMsg });
+            showError(`Roll Number: ${errorMsg}`);
+          } else if (errorData.id_number) {
+            const errorMsg = errorData.id_number[0];
+            setErrors({ general: errorMsg });
+            showError(errorMsg);
+          } else {
+            const errorMsg = 'An error occurred. Please try again.';
+            setErrors({ general: errorMsg });
+            showError(errorMsg);
+          }
+        } catch {
+          const errorMsg = 'Network error. Please check your connection.';
+          setErrors({ general: errorMsg });
+          showError(errorMsg);
+        }
+      } finally {
+        setLoading(false);
+      }
     } else {
       setErrors(newErrors);
     }
@@ -118,6 +198,9 @@ function Login() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="auth-form">
+              {errors.general && (
+                <div className="error-message general-error">{errors.general}</div>
+              )}
               {!isLogin && (
                 <div className="input-group">
                   <label htmlFor="name">Full Name</label>
@@ -200,8 +283,8 @@ function Login() {
                 </div>
               )}
 
-              <button type="submit" className="submit-button">
-                {isLogin ? 'Login' : 'Register'}
+              <button type="submit" className="submit-button" disabled={loading}>
+                {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
               </button>
 
             </form>

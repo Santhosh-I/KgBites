@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import './StaffLogin.css';
+import { authAPI, tokenService } from '../../services/authService';
+import { useToast } from '../common/ToastProvider';
 
 function StaffLogin() {
   const [formData, setFormData] = useState({
@@ -7,6 +9,8 @@ function StaffLogin() {
     password: ''
   });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const { showSuccess, showError } = useToast();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,17 +42,52 @@ function StaffLogin() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
 
     if (Object.keys(newErrors).length === 0) {
-      console.log('Staff login submitted:', formData);
-      alert('Staff login successful!');
-      setFormData({
-        staffId: '',
-        password: ''
-      });
+      setLoading(true);
+      try {
+        const response = await authAPI.login({
+          staffId: formData.staffId,
+          password: formData.password
+        });
+        
+        // Store token and user data
+        tokenService.setToken(response.token);
+        tokenService.setUser(response.user);
+        
+        showSuccess(`Welcome back, ${response.user.full_name || response.user.username}! 👨‍🍳`);
+        console.log('Logged in staff:', response.user);
+        
+        // Clear form
+        setFormData({
+          staffId: '',
+          password: ''
+        });
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        try {
+          const errorData = JSON.parse(error.message);
+          if (errorData.non_field_errors) {
+            const errorMsg = errorData.non_field_errors[0];
+            setErrors({ general: errorMsg });
+            showError(errorMsg);
+          } else {
+            const errorMsg = 'Invalid credentials. Please try again.';
+            setErrors({ general: errorMsg });
+            showError(errorMsg);
+          }
+        } catch {
+          const errorMsg = 'Network error. Please check your connection.';
+          setErrors({ general: errorMsg });
+          showError(errorMsg);
+        }
+      } finally {
+        setLoading(false);
+      }
     } else {
       setErrors(newErrors);
     }
@@ -79,6 +118,9 @@ function StaffLogin() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="staff-auth-form">
+              {errors.general && (
+                <div className="staff-error-message general-error">{errors.general}</div>
+              )}
               <div className="staff-input-group">
                 <label htmlFor="staffId">Staff ID</label>
                 <input
@@ -111,8 +153,8 @@ function StaffLogin() {
                 <a href="#forgot">Forgot Password?</a>
               </div>
 
-              <button type="submit" className="staff-submit-button">
-                Login
+              <button type="submit" className="staff-submit-button" disabled={loading}>
+                {loading ? 'Please wait...' : 'Login'}
               </button>
             </form>
 
