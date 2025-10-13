@@ -73,9 +73,10 @@ body.dark-theme {
 }
 
 .staff-logo-section {
-  padding: 2rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 12px;
 }
@@ -84,6 +85,15 @@ body.dark-theme {
   width: 42px;
   height: 42px;
   object-fit: contain;
+  flex-shrink: 0;
+}
+
+.staff-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .staff-brand h1 {
@@ -94,12 +104,14 @@ body.dark-theme {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0;
+  line-height: 1.2;
 }
 
 .staff-subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
   font-weight: 500;
+  line-height: 1.2;
 }
 
 /* ========== NAVIGATION MENU ========== */
