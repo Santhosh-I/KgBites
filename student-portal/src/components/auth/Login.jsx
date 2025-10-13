@@ -316,7 +316,7 @@ function Login() {
             </div>
           </div>
           <img 
-            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=1000&fit=crop" 
+            src="https://plus.unsplash.com/premium_vector-1724055667076-86452ffef8fc?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=671" 
             alt="Delicious food" 
             className="food-image"
           />

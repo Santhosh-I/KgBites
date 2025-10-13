@@ -6,82 +6,56 @@ const ToastContext = createContext();
 export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
+    throw new Error('useToast must be used within ToastProvider');
   }
   return context;
 };
 
-let toastId = 0;
-
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = 'success', duration = 4000) => {
-    const id = ++toastId;
-    const toast = { id, message, type, duration };
-    
-    setToasts(prev => [...prev, toast]);
-    
-    return id;
+  const addToast = useCallback((message, type = 'success', duration = 1000) => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type, duration }]);
   }, []);
 
   const removeToast = useCallback((id) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
 
-  const showSuccess = useCallback((message, duration) => {
-    return addToast(message, 'success', duration);
+  const showSuccess = useCallback((message, duration = 1000) => {
+    addToast(message, 'success', duration);
   }, [addToast]);
 
-  const showError = useCallback((message, duration) => {
-    return addToast(message, 'error', duration);
+  const showError = useCallback((message, duration = 1000) => {
+    addToast(message, 'error', duration);
   }, [addToast]);
 
-  const showWarning = useCallback((message, duration) => {
-    return addToast(message, 'warning', duration);
+  const showWarning = useCallback((message, duration = 1000) => {
+    addToast(message, 'warning', duration);
   }, [addToast]);
 
-  const showInfo = useCallback((message, duration) => {
-    return addToast(message, 'info', duration);
+  const showInfo = useCallback((message, duration = 1000) => {
+    addToast(message, 'info', duration);
   }, [addToast]);
-
-  const clearAll = useCallback(() => {
-    setToasts([]);
-  }, []);
-
-  const contextValue = {
-    showSuccess,
-    showError,
-    showWarning,
-    showInfo,
-    clearAll,
-    removeToast
-  };
 
   return (
-    <ToastContext.Provider value={contextValue}>
+    <ToastContext.Provider value={{ showSuccess, showError, showWarning, showInfo }}>
       {children}
       <div className="toast-container">
-        {toasts.map((toast, index) => (
-          <div
+        {toasts.map(toast => (
+          <Toast
             key={toast.id}
-            style={{
-              position: 'fixed',
-              top: `${20 + index * 80}px`,
-              right: '20px',
-              zIndex: 9999 + index
-            }}
-          >
-            <Toast
-              message={toast.message}
-              type={toast.type}
-              isVisible={true}
-              onClose={() => removeToast(toast.id)}
-              duration={toast.duration}
-            />
-          </div>
+            message={toast.message}
+            type={toast.type}
+            isVisible={true}
+            onClose={() => removeToast(toast.id)}
+            duration={toast.duration}
+          />
         ))}
       </div>
     </ToastContext.Provider>
   );
 };
+
+export default ToastProvider;

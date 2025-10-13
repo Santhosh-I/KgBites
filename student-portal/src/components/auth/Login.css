@@ -1,3 +1,4 @@
+/* ========== GLOBAL RESET ========== */
 * {
   margin: 0;
   padding: 0;
@@ -8,9 +9,10 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 }
 
+/* ========== AUTH CONTAINER ========== */
 .auth-container {
   min-height: 100vh;
-  background: #F5F6FA;
+  background: #151419;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -21,21 +23,21 @@ body {
   display: flex;
   max-width: 1100px;
   width: 100%;
-  background: #FFFFFF;
+  background: #1B1B1E;
   border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(28, 30, 38, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   min-height: 650px;
 }
 
-/* Left Side - Form Section */
+/* ========== LEFT SIDE - FORM SECTION ========== */
 .auth-form-section {
   flex: 1;
   padding: 50px 60px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: #FFFFFF;
+  background: #1B1B1E;
 }
 
 .form-content {
@@ -44,7 +46,7 @@ body {
   margin: 0 auto;
 }
 
-/* Logo Section - Centered */
+/* ========== LOGO SECTION ========== */
 .logo-section {
   text-align: center;
   margin-bottom: 35px;
@@ -53,47 +55,31 @@ body {
   align-items: center;
 }
 
-.logo-badge {
-  width: 80px;           /* Increased from 60px */
-  height: 80px;          /* Increased from 60px */
-  background: #FFFFFF;
-  border-radius: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto 15px;
-  overflow: hidden;
-}
-
 .logo-image {
-  width: 100%;           /* Changed from 120% */
-  height: 100%;          /* Keep at 100% */
-  object-fit: contain;   /* Maintains aspect ratio */
-  padding: 4px;          /* Adjust padding if needed */
-}
-
-
-.logo-text {
-  font-size: 24px;
-  font-weight: 700;
-  color: #FFFFFF;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
 }
 
 .brand-name {
   font-size: 28px;
   font-weight: 700;
-  color: #1C1E26;
+  background: linear-gradient(135deg, #f7af08 0%, #ffe042 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: 4px;
   text-align: center;
 }
 
 .brand-tagline {
   font-size: 13px;
-  color: #888888;
+  color: #878787;
   text-align: center;
 }
 
-/* Form Header */
+/* ========== FORM HEADER ========== */
 .form-header {
   margin-bottom: 30px;
 }
@@ -101,17 +87,17 @@ body {
 .form-title {
   font-size: 26px;
   font-weight: 700;
-  color: #1C1E26;
+  color: #FBFBFB;
   margin-bottom: 8px;
 }
 
 .form-description {
   font-size: 14px;
-  color: #888888;
+  color: #878787;
   line-height: 1.5;
 }
 
-/* Form Styles */
+/* ========== FORM STYLES ========== */
 .auth-form {
   width: 100%;
 }
@@ -124,7 +110,7 @@ body {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #333333;
+  color: #FBFBFB;
   margin-bottom: 6px;
 }
 
@@ -132,37 +118,41 @@ body {
   width: 100%;
   padding: 12px 16px;
   font-size: 14px;
-  border: 1px solid #E4E9FF;
+  border: 1px solid #262626;
   border-radius: 8px;
-  background: #F5F6FA;
-  color: #333333;
+  background: #262626;
+  color: #FBFBFB;
   transition: all 0.3s ease;
   outline: none;
 }
 
+.input-group input::placeholder {
+  color: #878787;
+}
+
 .input-group input:focus {
-  border-color: #2A49D3;
-  background: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(42, 73, 211, 0.08);
+  border-color: #f7af08;
+  background: #1B1B1E;
+  box-shadow: 0 0 0 3px rgba(247, 175, 8, 0.15);
 }
 
 .input-group input.error {
-  border-color: #ff4444;
-  background: #fff5f5;
+  border-color: #FF4444;
+  background: rgba(255, 68, 68, 0.1);
 }
 
 .error-message {
   display: block;
-  color: #ff4444;
+  color: #FF4444;
   font-size: 11px;
   margin-top: 4px;
   font-weight: 500;
 }
 
 .general-error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background: rgba(255, 68, 68, 0.15);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  color: #FF4444;
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 13px;
@@ -178,6 +168,7 @@ body {
   75% { transform: translateX(5px); }
 }
 
+/* ========== FORGOT LINK ========== */
 .forgot-link {
   text-align: right;
   margin-bottom: 20px;
@@ -185,57 +176,66 @@ body {
 
 .forgot-link a {
   font-size: 12px;
-  color: #2A49D3;
+  color: #f7af08;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .forgot-link a:hover {
-  color: #1C1E26;
+  color: #ffe042;
 }
 
+/* ========== SUBMIT BUTTON ========== */
 .submit-button {
   width: 100%;
   padding: 14px;
   font-size: 15px;
   font-weight: 700;
-  color: #FFFFFF;
-  background: #2a49d5;
+  color: #1B1B1E;
+  background: linear-gradient(135deg, #f7af08 0%, #ffe042 100%);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(247, 175, 8, 0.3);
 }
 
 .submit-button:hover {
-  background: #f9a824;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(42, 73, 211, 0.25);
+  background: linear-gradient(135deg, #ffe042 0%, #f7af08 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(247, 175, 8, 0.4);
 }
 
 .submit-button:active {
   transform: translateY(0);
 }
 
+.submit-button:disabled {
+  background: #262626;
+  color: #878787;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
+/* ========== TOGGLE SECTION ========== */
 .toggle-section {
   text-align: center;
   margin-top: 25px;
   padding-top: 20px;
-  border-top: 1px solid #E4E9FF;
+  border-top: 1px solid #262626;
 }
 
 .toggle-section p {
   font-size: 13px;
-  color: #888888;
+  color: #878787;
 }
 
 .toggle-link {
   background: none;
   border: none;
-  color: #2A49D3;
+  color: #f7af08;
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
@@ -244,16 +244,16 @@ body {
 }
 
 .toggle-link:hover {
-  color: #f9a824;
+  color: #ffe042;
   text-decoration: underline;
 }
 
-/* Right Side - Image Section */
+/* ========== RIGHT SIDE - IMAGE SECTION ========== */
 .auth-image-section {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #1C1E26;
+  background: #151419;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -272,7 +272,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(42, 73, 211, 0.85) 0%, rgba(28, 30, 38, 0.9) 100%);
+  background: linear-gradient(135deg, rgba(247, 175, 8, 0.85) 0%, rgba(21, 20, 25, 0.9) 100%);
   z-index: 1;
   display: flex;
   align-items: center;
@@ -296,11 +296,11 @@ body {
 .overlay-text {
   font-size: 16px;
   line-height: 1.6;
-  color: #B4C6F9;
+  color: #FBFBFB;
   max-width: 400px;
 }
 
-/* Responsive Design */
+/* ========== RESPONSIVE DESIGN ========== */
 @media (max-width: 968px) {
   .auth-card {
     flex-direction: column;
@@ -323,14 +323,16 @@ body {
   .auth-form-section {
     padding: 40px 30px;
   }
+
   .auth-image-section {
     display: none;
   }
+
   .logo-badge {
     width: 100px;
     height: 100px;
   }
-  
+
   .logo-image {
     padding: 2px;
   }
@@ -353,31 +355,21 @@ body {
     width: 90px;
     height: 90px;
   }
-  
+
   .logo-image {
     padding: 2px;
   }
 
-
   .brand-name {
     font-size: 24px;
-  }
-
-  .logo-text {
-    font-size: 20px;
   }
 
   .form-title {
     font-size: 22px;
   }
 
-  /* HIDE IMAGE SECTION ON TABLETS AND BELOW */
   .auth-image-section {
     display: none;
-  }
-
-  .social-buttons {
-    flex-direction: column;
   }
 }
 
@@ -399,7 +391,7 @@ body {
     height: 80px;
     margin-bottom: 15px;
   }
-  
+
   .logo-image {
     padding: 2px;
   }
@@ -430,7 +422,6 @@ body {
     font-size: 14px;
   }
 
-  /* IMAGE SECTION ALREADY HIDDEN FROM PREVIOUS BREAKPOINT */
   .auth-image-section {
     display: none;
   }
@@ -458,7 +449,7 @@ body {
     height: 60px;
     margin-bottom: 12px;
   }
-  
+
   .logo-image {
     padding: 1px;
   }
@@ -471,30 +462,18 @@ body {
     font-size: 20px;
   }
 
-  /* IMAGE SECTION REMAINS HIDDEN */
   .auth-image-section {
     display: none;
   }
 }
 
-
-/* Extra media query for large screens (optional) */
 @media (min-width: 968px) {
-  .logo-badge {
-    width: 70px;
-    height: 70px;
-  }
-
-  .logo-image {
-    padding: 10px;
-  }
   .logo-badge {
     width: 110px;
     height: 110px;
   }
-  
+
   .logo-image {
     padding: 2px;
   }
 }
-

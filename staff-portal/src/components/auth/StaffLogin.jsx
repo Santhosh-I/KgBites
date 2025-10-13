@@ -180,7 +180,7 @@ function StaffLogin() {
             </div>
           </div>
           <img 
-            src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&h=1000&fit=crop" 
+            src="https://i.pinimg.com/736x/7f/1f/7d/7f1f7db0b6e3a909e06a9c90879d31bd.jpg" 
             alt="Staff managing orders" 
             className="staff-food-image"
           />

@@ -1,3 +1,4 @@
+/* ========== GLOBAL RESET ========== */
 * {
   margin: 0;
   padding: 0;
@@ -8,9 +9,10 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 }
 
+/* ========== STAFF AUTH CONTAINER ========== */
 .staff-auth-container {
   min-height: 100vh;
-  background: #F5F6FA;
+  background: #151419;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -21,21 +23,21 @@ body {
   display: flex;
   max-width: 1100px;
   width: 100%;
-  background: #FFFFFF;
+  background: #1B1B1E;
   border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(28, 30, 38, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   min-height: 650px;
 }
 
-/* Left Side - Form Section */
+/* ========== LEFT SIDE - FORM SECTION ========== */
 .staff-auth-form-section {
   flex: 1;
   padding: 50px 60px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: #FFFFFF;
+  background: #1B1B1E;
 }
 
 .staff-form-content {
@@ -44,7 +46,7 @@ body {
   margin: 0 auto;
 }
 
-/* Logo Section - Centered */
+/* ========== LOGO SECTION ========== */
 .staff-logo-section {
   text-align: center;
   margin-bottom: 35px;
@@ -53,17 +55,6 @@ body {
   align-items: center;
 }
 
-.staff-logo-badge {
-  width: 80px;
-  height: 80px;
-  background: #FFFFFF;
-  border-radius: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto 15px;
-  overflow: hidden;
-}
 
 .staff-logo-image {
   width: 100%;
@@ -75,19 +66,22 @@ body {
 .staff-brand-name {
   font-size: 28px;
   font-weight: 700;
-  color: #1C1E26;
+  background: linear-gradient(135deg, #f7af08 0%, #ffe042 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: 4px;
   text-align: center;
 }
 
 .staff-brand-tagline {
   font-size: 13px;
-  color: #F9A825;
+  color: #f7af08;
   text-align: center;
   font-weight: 600;
 }
 
-/* Form Header */
+/* ========== FORM HEADER ========== */
 .staff-form-header {
   margin-bottom: 30px;
 }
@@ -95,17 +89,17 @@ body {
 .staff-form-title {
   font-size: 26px;
   font-weight: 700;
-  color: #1C1E26;
+  color: #FBFBFB;
   margin-bottom: 8px;
 }
 
 .staff-form-description {
   font-size: 14px;
-  color: #888888;
+  color: #878787;
   line-height: 1.5;
 }
 
-/* Form Styles */
+/* ========== FORM STYLES ========== */
 .staff-auth-form {
   width: 100%;
 }
@@ -118,7 +112,7 @@ body {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #333333;
+  color: #FBFBFB;
   margin-bottom: 6px;
 }
 
@@ -126,37 +120,41 @@ body {
   width: 100%;
   padding: 12px 16px;
   font-size: 14px;
-  border: 1px solid #E4E9FF;
+  border: 1px solid #262626;
   border-radius: 8px;
-  background: #F5F6FA;
-  color: #333333;
+  background: #262626;
+  color: #FBFBFB;
   transition: all 0.3s ease;
   outline: none;
 }
 
+.staff-input-group input::placeholder {
+  color: #878787;
+}
+
 .staff-input-group input:focus {
-  border-color: #2A49D3;
-  background: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(42, 73, 211, 0.08);
+  border-color: #f7af08;
+  background: #1B1B1E;
+  box-shadow: 0 0 0 3px rgba(247, 175, 8, 0.15);
 }
 
 .staff-input-group input.error {
-  border-color: #ff4444;
-  background: #fff5f5;
+  border-color: #FF4444;
+  background: rgba(255, 68, 68, 0.1);
 }
 
 .staff-error-message {
   display: block;
-  color: #ff4444;
+  color: #FF4444;
   font-size: 11px;
   margin-top: 4px;
   font-weight: 500;
 }
 
 .general-error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background: rgba(255, 68, 68, 0.15);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  color: #FF4444;
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 13px;
@@ -172,6 +170,7 @@ body {
   75% { transform: translateX(5px); }
 }
 
+/* ========== FORGOT LINK ========== */
 .staff-forgot-link {
   text-align: right;
   margin-bottom: 20px;
@@ -179,50 +178,60 @@ body {
 
 .staff-forgot-link a {
   font-size: 12px;
-  color: #2A49D3;
+  color: #f7af08;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .staff-forgot-link a:hover {
-  color: #1C1E26;
+  color: #ffe042;
 }
 
+/* ========== SUBMIT BUTTON ========== */
 .staff-submit-button {
   width: 100%;
   padding: 14px;
   font-size: 15px;
   font-weight: 700;
-  color: #FFFFFF;
-  background: #2A49D3;
+  color: #1B1B1E;
+  background: linear-gradient(135deg, #f7af08 0%, #ffe042 100%);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(247, 175, 8, 0.3);
 }
 
 .staff-submit-button:hover {
-  background: #F9A825;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(249, 168, 37, 0.25);
+  background: linear-gradient(135deg, #ffe042 0%, #f7af08 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(247, 175, 8, 0.4);
 }
 
 .staff-submit-button:active {
   transform: translateY(0);
 }
 
+.staff-submit-button:disabled {
+  background: #262626;
+  color: #878787;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ========== FOOTER NOTE ========== */
 .staff-footer-note {
   text-align: center;
   margin-top: 25px;
   padding-top: 20px;
-  border-top: 1px solid #E4E9FF;
+  border-top: 1px solid #262626;
 }
 
 .staff-footer-note p {
   font-size: 12px;
-  color: #888888;
+  color: #878787;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,15 +240,15 @@ body {
 
 .staff-info-icon {
   font-size: 16px;
-  color: #2A49D3;
+  color: #f7af08;
 }
 
-/* Right Side - Image Section */
+/* ========== RIGHT SIDE - IMAGE SECTION ========== */
 .staff-auth-image-section {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #1C1E26;
+  background: #151419;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -258,7 +267,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(42, 73, 211, 0.9) 0%, rgba(28, 30, 38, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(247, 175, 8, 0.9) 0%, rgba(21, 20, 25, 0.95) 100%);
   z-index: 1;
   display: flex;
   align-items: center;
@@ -282,7 +291,7 @@ body {
 .staff-overlay-text {
   font-size: 16px;
   line-height: 1.6;
-  color: #B4C6F9;
+  color: #FBFBFB;
   max-width: 400px;
   margin: 0 auto 30px;
 }
@@ -316,7 +325,7 @@ body {
   font-weight: 700;
 }
 
-/* Responsive Design - Combined */
+/* ========== RESPONSIVE DESIGN ========== */
 
 /* Tablets and Medium Screens */
 @media (max-width: 968px) {
@@ -473,5 +482,4 @@ body {
   .staff-logo-image {
     padding: 2px;
   }
-
 }
