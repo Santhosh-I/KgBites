@@ -3,8 +3,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
 from .models import Counter, FoodItem
 from .serializers import CounterSerializer, FoodItemSerializer, MenuDataSerializer
+from accounts.models import CanteenStaff
 
 
 @api_view(['GET'])
@@ -12,15 +14,15 @@ from .serializers import CounterSerializer, FoodItemSerializer, MenuDataSerializ
 def get_menu_data(request):
     """Get complete menu data for dashboard"""
     try:
-        # Get all counters with available items
+        # Get all counters with available items in stock (real-time sync)
         counters = Counter.objects.annotate(
-            available_items_count=Count('food_items', filter=Q(food_items__is_available=True))
+            available_items_count=Count('food_items', filter=Q(food_items__is_available=True, food_items__stock__gt=0))
         ).filter(available_items_count__gt=0)
         
-        # Get all available food items
-        food_items = FoodItem.objects.filter(is_available=True).select_related('counter')
+        # Get all available food items with stock > 0 (real-time sync with staff portal)
+        food_items = FoodItem.objects.filter(is_available=True, stock__gt=0).select_related('counter')
         
-        # Get featured items (you can add a featured field later)
+        # Get featured items (items with good stock levels)
         featured_items = food_items.filter(stock__gt=10)[:6]
         
         # Get popular items (for now, we'll use recently created items)
@@ -143,5 +145,173 @@ def get_food_item_detail(request, item_id):
         return Response(FoodItemSerializer(food_item).data, status=status.HTTP_200_OK)
     except FoodItem.DoesNotExist:
         return Response({'error': 'Food item not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Staff Management Views
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def staff_get_all_items(request):
+    """Get all items for staff management (including unavailable ones)"""
+    try:
+        # Verify user is staff
+        if not hasattr(request.user, 'canteen_staff_profile'):
+            return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
+        
+        items = FoodItem.objects.all().select_related('counter').order_by('-created_at')
+        counters = Counter.objects.all()
+        
+        return Response({
+            'items': FoodItemSerializer(items, many=True).data,
+            'counters': CounterSerializer(counters, many=True).data,
+            'total_items': items.count(),
+            'available_items': items.filter(is_available=True).count(),
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def staff_create_item(request):
+    """Create a new food item (staff only)"""
+    try:
+        # Verify user is staff
+        if not hasattr(request.user, 'canteen_staff_profile'):
+            return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
+        
+        data = request.data
+        
+        # Validate required fields
+        required_fields = ['name', 'description', 'price', 'counter_id', 'stock']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate counter exists
+        try:
+            counter = Counter.objects.get(id=data['counter_id'])
+        except Counter.DoesNotExist:
+            return Response({'error': 'Counter not found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create the food item
+        food_item = FoodItem.objects.create(
+            name=data['name'],
+            description=data['description'],
+            price=float(data['price']),
+            counter=counter,
+            stock=int(data['stock']),
+            is_available=data.get('is_available', True),
+            image_url=data.get('image_url', '')
+        )
+        
+        return Response({
+            'message': 'Item created successfully',
+            'item': FoodItemSerializer(food_item).data
+        }, status=status.HTTP_201_CREATED)
+        
+    except ValueError as e:
+        return Response({'error': 'Invalid price or stock value'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def staff_update_item(request, item_id):
+    """Update an existing food item (staff only)"""
+    try:
+        # Verify user is staff
+        if not hasattr(request.user, 'canteen_staff_profile'):
+            return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
+        
+        food_item = get_object_or_404(FoodItem, id=item_id)
+        data = request.data
+        
+        # Update fields if provided
+        if 'name' in data:
+            food_item.name = data['name']
+        if 'description' in data:
+            food_item.description = data['description']
+        if 'price' in data:
+            food_item.price = float(data['price'])
+        if 'stock' in data:
+            food_item.stock = int(data['stock'])
+        if 'is_available' in data:
+            food_item.is_available = data['is_available']
+        if 'image_url' in data:
+            food_item.image_url = data['image_url']
+        if 'counter_id' in data:
+            try:
+                counter = Counter.objects.get(id=data['counter_id'])
+                food_item.counter = counter
+            except Counter.DoesNotExist:
+                return Response({'error': 'Counter not found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        food_item.save()
+        
+        return Response({
+            'message': 'Item updated successfully',
+            'item': FoodItemSerializer(food_item).data
+        }, status=status.HTTP_200_OK)
+        
+    except ValueError as e:
+        return Response({'error': 'Invalid price or stock value'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def staff_delete_item(request, item_id):
+    """Delete a food item (staff only)"""
+    try:
+        # Verify user is staff
+        if not hasattr(request.user, 'canteen_staff_profile'):
+            return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
+        
+        food_item = get_object_or_404(FoodItem, id=item_id)
+        item_name = food_item.name
+        food_item.delete()
+        
+        return Response({
+            'message': f'Item "{item_name}" deleted successfully'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def staff_create_counter(request):
+    """Create a new counter (staff only)"""
+    try:
+        # Verify user is staff
+        if not hasattr(request.user, 'canteen_staff_profile'):
+            return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
+        
+        data = request.data
+        
+        # Validate required fields
+        if not data.get('name'):
+            return Response({'error': 'Counter name is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if counter already exists
+        if Counter.objects.filter(name=data['name']).exists():
+            return Response({'error': 'Counter with this name already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        counter = Counter.objects.create(
+            name=data['name'],
+            description=data.get('description', '')
+        )
+        
+        return Response({
+            'message': 'Counter created successfully',
+            'counter': CounterSerializer(counter).data
+        }, status=status.HTTP_201_CREATED)
+        
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

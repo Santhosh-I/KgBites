@@ -16,6 +16,12 @@ function Dashboard() {
   const [showCart, setShowCart] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [menuData, setMenuData] = useState({
+    counters: [],
+    food_items: [],
+    featured_items: [],
+    popular_items: []
+  });
   const dropdownRef = useRef(null);
   
   // User Data
@@ -27,8 +33,48 @@ function Dashboard() {
 
   const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.full_name || userData.name || 'User')}&background=f7af08&color=1B1B1E`;
 
-  // TODO: Replace with actual API data
-  const foodItems = [];
+  // Get food items from menu data
+  const foodItems = menuData.food_items || [];
+
+  // Fetch menu data from API
+  const fetchMenuData = async () => {
+    try {
+      setLoading(true);
+      const token = tokenService.getToken();
+      
+      if (!token) {
+        showError('Please log in to view menu');
+        return;
+      }
+
+      const response = await fetch('http://127.0.0.1:8000/api/menu/data/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMenuData(data);
+      } else {
+        const errorData = await response.json();
+        showError('Failed to load menu data');
+        console.error('Menu fetch error:', errorData);
+      }
+    } catch (error) {
+      showError('Network error while loading menu');
+      console.error('Menu fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load menu data when component mounts
+  useEffect(() => {
+    fetchMenuData();
+  }, []);
 
   // Dark mode effect
   useEffect(() => {
@@ -83,7 +129,7 @@ function Dashboard() {
   };
 
   const getTotalItems = () => cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const getSubtotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const getSubtotal = () => cartItems.reduce((sum, item) => sum + (parseFloat(item.price || 0) * item.quantity), 0);
   const getTax = () => getSubtotal() * 0.1;
   const getTotal = () => getSubtotal() + getTax();
 
@@ -272,7 +318,7 @@ function Dashboard() {
                 <div className="product-img-box">
                   <img src={item.image} alt={item.name} className="product-img" />
                   {item.is_veg && <span className="veg-tag">VEG</span>}
-                  {item.available === 0 && <div className="sold-out-overlay">Sold Out</div>}
+                  {item.stock === 0 && <div className="sold-out-overlay">Sold Out</div>}
                 </div>
 
                 <div className="product-info">
@@ -280,22 +326,29 @@ function Dashboard() {
                   <p className="product-desc">{item.description}</p>
 
                   <div className="product-meta-row">
-                    <span className="meta-time">
+                    <span className="meta-counter">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
+                        <path d="M3 9V7C3 6.44772 3.44772 6 4 6H20C20.5523 6 21 6.44772 21 7V9"/>
+                        <path d="M3 9V19C3 19.5523 3.44772 20 4 20H20C20.5523 20 21 19.5523 21 19V9"/>
+                        <path d="M9 13H15"/>
                       </svg>
-                      {item.prep_time} min
+                      {item.counter_name}
                     </span>
-                    <span className={`meta-stock ${item.available > 5 ? 'good' : 'low'}`}>
-                      {item.available > 0 ? `${item.available} left` : 'Out'}
+                    <span className={`meta-stock ${item.stock > 5 ? 'good' : 'low'}`}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M16 4H8C6.89543 4 6 4.89543 6 6V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V6C18 4.89543 17.1046 4 16 4Z"/>
+                        <path d="M9 8H15"/>
+                        <path d="M9 12H15"/>
+                        <path d="M9 16H15"/>
+                      </svg>
+                      {item.stock > 0 ? `${item.stock} available` : 'Out of stock'}
                     </span>
                   </div>
 
                   <div className="product-action-row">
                     <div className="price-box">
                       <span className="price-symbol">$</span>
-                      <span className="price-value">{item.price.toFixed(2)}</span>
+                      <span className="price-value">{parseFloat(item.price || 0).toFixed(2)}</span>
                     </div>
 
                     {cartItems.find(ci => ci.id === item.id) ? (
@@ -370,7 +423,7 @@ function Dashboard() {
                   <img src={item.image} alt={item.name} className="cart-item-img" />
                   <div className="cart-item-info">
                     <h4 className="cart-item-name">{item.name}</h4>
-                    <p className="cart-item-price">${item.price.toFixed(2)}</p>
+                    <p className="cart-item-price">${parseFloat(item.price || 0).toFixed(2)}</p>
                   </div>
                   <div className="cart-item-qty">
                     <button className="qty-small-btn" onClick={() => updateQuantity(item.id, -1)}>
@@ -386,7 +439,7 @@ function Dashboard() {
                       </svg>
                     </button>
                   </div>
-                  <div className="cart-item-total">${(item.price * item.quantity).toFixed(2)}</div>
+                  <div className="cart-item-total">${(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</div>
                 </div>
               ))}
             </div>

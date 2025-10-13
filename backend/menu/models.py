@@ -27,6 +27,7 @@ class FoodItem(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Price of the item")
     
     image = models.ImageField(upload_to='food_images/', blank=True, null=True, help_text="Image of the food item")
+    image_url = models.URLField(blank=True, null=True, help_text="URL to an external image")
     
     stock = models.PositiveIntegerField(default=0, help_text="Available quantity or stock")
     is_available = models.BooleanField(default=True, help_text="Is the item available for ordering?")

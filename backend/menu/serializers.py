@@ -20,7 +20,7 @@ class FoodItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FoodItem
         fields = [
-            'id', 'name', 'description', 'price', 'image', 'stock', 
+            'id', 'name', 'description', 'price', 'image', 'image_url', 'stock', 
             'is_available', 'counter_name', 'counter_id', 'created_at', 'updated_at'
         ]
 
