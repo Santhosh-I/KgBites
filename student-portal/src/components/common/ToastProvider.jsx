@@ -14,7 +14,7 @@ export const useToast = () => {
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = 'success', duration = 1000) => {
+  const addToast = useCallback((message, type = 'success', duration = 1500) => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, message, type, duration }]);
   }, []);
@@ -23,19 +23,19 @@ export const ToastProvider = ({ children }) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
 
-  const showSuccess = useCallback((message, duration = 1000) => {
+  const showSuccess = useCallback((message, duration = 1500) => {
     addToast(message, 'success', duration);
   }, [addToast]);
 
-  const showError = useCallback((message, duration = 1000) => {
+  const showError = useCallback((message, duration = 1500) => {
     addToast(message, 'error', duration);
   }, [addToast]);
 
-  const showWarning = useCallback((message, duration = 1000) => {
+  const showWarning = useCallback((message, duration = 1500) => {
     addToast(message, 'warning', duration);
   }, [addToast]);
 
-  const showInfo = useCallback((message, duration = 1000) => {
+  const showInfo = useCallback((message, duration = 1500) => {
     addToast(message, 'info', duration);
   }, [addToast]);
 

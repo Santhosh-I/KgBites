@@ -127,7 +127,7 @@
   height: 100%;
   width: 100%;
   transform-origin: left;
-  animation: toast-progress 1s linear forwards;
+  animation: toast-progress 1.5s linear forwards;
 }
 
 .toast--success .toast__progress-fill {

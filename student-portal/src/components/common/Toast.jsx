@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Toast.css';
 
-const Toast = ({ message, type = 'success', isVisible, onClose, duration = 1000 }) => {
+const Toast = ({ message, type = 'success', isVisible, onClose, duration = 1500 }) => {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {

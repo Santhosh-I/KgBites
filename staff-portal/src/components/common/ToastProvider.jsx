@@ -16,7 +16,7 @@ let toastId = 0;
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = 'success', duration = 4000) => {
+  const addToast = useCallback((message, type = 'success', duration = 1500) => {
     const id = ++toastId;
     const toast = { id, message, type, duration };
     
@@ -29,19 +29,19 @@ export const ToastProvider = ({ children }) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
 
-  const showSuccess = useCallback((message, duration) => {
+  const showSuccess = useCallback((message, duration = 1500) => {
     return addToast(message, 'success', duration);
   }, [addToast]);
 
-  const showError = useCallback((message, duration) => {
+  const showError = useCallback((message, duration = 1500) => {
     return addToast(message, 'error', duration);
   }, [addToast]);
 
-  const showWarning = useCallback((message, duration) => {
+  const showWarning = useCallback((message, duration = 1500) => {
     return addToast(message, 'warning', duration);
   }, [addToast]);
 
-  const showInfo = useCallback((message, duration) => {
+  const showInfo = useCallback((message, duration = 1500) => {
     return addToast(message, 'info', duration);
   }, [addToast]);
 
@@ -85,3 +85,5 @@ export const ToastProvider = ({ children }) => {
     </ToastContext.Provider>
   );
 };
+
+export default ToastProvider;
