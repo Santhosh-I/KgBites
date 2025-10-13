@@ -1,6 +1,6 @@
 import React from 'react'
 import StaffLogin from './components/auth/StaffLogin'
-import StaffDashboard from './components/StaffDashboard'
+import StaffDashboard from './components/dashboard/StaffDashboard'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider } from './components/common/ToastProvider'
 import './App.css'

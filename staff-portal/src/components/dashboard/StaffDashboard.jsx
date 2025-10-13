@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../components/common/ToastProvider';
-import OrderManagement from './dashboard/OrderManagement';
-import ItemManagement from './dashboard/ItemManagement';
-import Analytics from './dashboard/Analytics';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../common/ToastProvider';
+import OrderManagement from './OrderManagement';
+import ItemManagement from './ItemManagement';
+import Analytics from './Analytics';
 import './StaffDashboard.css';
 
 const StaffDashboard = () => {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/CartContext';
-import { useToast } from '../components/common/ToastProvider';
-import FloatingCart from '../components/common/FloatingCart';
+import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
+import { useToast } from '../common/ToastProvider';
+import FloatingCart from '../common/FloatingCart';
 import './Dashboard.css';
 
 const Dashboard = () => {

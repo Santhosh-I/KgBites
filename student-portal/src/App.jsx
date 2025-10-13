@@ -1,6 +1,6 @@
 import React from 'react'
 import Login from './components/auth/Login'
-import Dashboard from './components/Dashboard'
+import Dashboard from './components/dashboard/Dashboard'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import { ToastProvider } from './components/common/ToastProvider'
