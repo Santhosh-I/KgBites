@@ -386,6 +386,13 @@ body.dark-theme {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
+  min-height: 500px;
+}
+
+.staff-items-grid:has(.staff-empty-state) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .staff-item-card {
@@ -571,9 +578,15 @@ body.dark-theme {
 
 /* ========== EMPTY STATE ========== */
 .staff-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: 4rem 2rem;
   color: var(--text-secondary);
+  min-height: 400px;
+  transform: translateY(-40px);
 }
 
 .empty-icon {
