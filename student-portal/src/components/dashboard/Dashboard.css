@@ -729,16 +729,23 @@ body.light-theme {
   color: var(--text-secondary);
 }
 
-/* ========== RIGHT SIDEBAR - CART ========== */
+/* ========== RIGHT SIDEBAR - CART (FIXED) ========== */
 .sidebar-right {
   background: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
-  display: flex;
+  display: none;
   flex-direction: column;
   position: sticky;
   top: 0;
   height: 100vh;
   overflow-y: auto;
+}
+
+/* Show on desktop ONLY when cart-hidden class is NOT present */
+@media (min-width: 1025px) {
+  .pos-dashboard:not(.cart-hidden) .sidebar-right {
+    display: flex;
+  }
 }
 
 .cart-header {
@@ -1083,9 +1090,10 @@ body.light-theme {
     display: none;
   }
 
-  /* Slide-in Cart */
+  /* Mobile/Tablet - Fixed overlay cart */
   .sidebar-right {
     position: fixed;
+    display: flex;
     top: 0;
     right: -100%;
     height: 100vh;
