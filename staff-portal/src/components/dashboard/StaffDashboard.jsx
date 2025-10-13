@@ -294,7 +294,7 @@ function StaffDashboard() {
   // State Management
   const [activeView, setActiveView] = useState('items');
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [counters, setCounters] = useState([]);

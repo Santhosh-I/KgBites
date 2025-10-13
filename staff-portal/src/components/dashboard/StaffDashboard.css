@@ -586,7 +586,7 @@ body.dark-theme {
   padding: 4rem 2rem;
   color: var(--text-secondary);
   min-height: 400px;
-  transform: translateY(-40px);
+  transform: translateY(-60px);
 }
 
 .empty-icon {
