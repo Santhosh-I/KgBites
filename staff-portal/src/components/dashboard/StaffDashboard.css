@@ -105,24 +105,28 @@ body.dark-theme {
 /* ========== NAVIGATION MENU ========== */
 .staff-sidebar-menu {
   flex: 1;
-  padding: 1.5rem 0;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .staff-menu-btn {
-  width: 100%;
   display: flex;
   align-items: center;
-  padding: 16px 24px;
-  margin: 2px 8px;
-  background: transparent;
+  gap: 12px;
+  padding: 14px 16px;
   border: none;
+  background: transparent;
   border-radius: 12px;
-  color: var(--text-secondary);
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
   position: relative;
-  font-size: 14px;
+  width: 100%;
+  text-align: left;
 }
 
 .staff-menu-btn:hover {
@@ -133,25 +137,12 @@ body.dark-theme {
 .staff-menu-btn.active {
   background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
   color: var(--text-tertiary);
-  font-weight: 600;
-}
-
-.staff-menu-btn.active::before {
-  content: '';
-  position: absolute;
-  left: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 24px;
-  background: var(--accent-primary);
-  border-radius: 2px;
+  box-shadow: 0 4px 16px rgba(247, 175, 8, 0.3);
 }
 
 .staff-menu-icon {
   width: 20px;
   height: 20px;
-  margin-right: 12px;
   stroke-width: 2;
 }
 
