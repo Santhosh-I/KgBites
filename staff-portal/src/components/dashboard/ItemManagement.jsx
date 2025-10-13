@@ -180,8 +180,8 @@ const ItemManagement = ({ onDataUpdate }) => {
         {filteredItems.map(item => (
           <div key={item.id} className={`item-card ${!item.is_available ? 'unavailable' : ''} ${item.stock <= 5 ? 'low-stock' : ''}`}>
             <div className="item-image">
-              {item.image ? (
-                <img src={item.image} alt={item.name} />
+              {(item.image_display_url || item.image_url) ? (
+                <img src={item.image_display_url || item.image_url} alt={item.name} />
               ) : (
                 <div className="no-image">
                   <span>🍽️</span>
