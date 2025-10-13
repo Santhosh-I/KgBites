@@ -17,3 +17,5 @@ yarn-debug.log*
 
 # pycache ignore
 __pycache__/
+
+.vscode/
