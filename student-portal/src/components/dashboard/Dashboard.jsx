@@ -1,238 +1,427 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCart } from '../../contexts/CartContext';
+import { tokenService } from '../../services/authService';
 import { useToast } from '../common/ToastProvider';
-import FloatingCart from '../common/FloatingCart';
 import './Dashboard.css';
 
-const Dashboard = () => {
-  const { user, logout } = useAuth();
-  const { addItem, getItemQuantity } = useCart();
+function Dashboard() {
+  const { logout, user } = useAuth();
   const { showSuccess, showError } = useToast();
   
-  const [menuData, setMenuData] = useState({
-    counters: [],
-    food_items: [],
-    featured_items: [],
-    popular_items: []
-  });
-  const [loading, setLoading] = useState(true);
-  const [selectedCounter, setSelectedCounter] = useState('all');
+  // State Management
+  const [filterType, setFilterType] = useState('all');
+  const [cartItems, setCartItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeView, setActiveView] = useState('all'); // all, featured, popular
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const dropdownRef = useRef(null);
+  
+  // User Data
+  const userData = user || tokenService.getUser() || {
+    name: 'Student',
+    email: 'student@kgbites.com',
+    rollNumber: 'ST2025001',
+  };
 
+  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.full_name || userData.name || 'User')}&background=f7af08&color=1B1B1E`;
+
+  // TODO: Replace with actual API data
+  const foodItems = [];
+
+  // Dark mode effect
   useEffect(() => {
-    fetchMenuData();
+    document.body.className = darkMode ? 'dark-theme' : 'light-theme';
+  }, [darkMode]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchMenuData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/menu/data/', {
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+  // Filter items with search and filter type
+  const filteredItems = foodItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = 
+      filterType === 'all' ? true :
+      filterType === 'veg' ? item.is_veg === true :
+      filterType === 'non-veg' ? item.is_veg === false :
+      filterType === 'snacks' ? item.category === 'appetizer' :
+      true;
+    
+    return matchesSearch && matchesFilter;
+  });
 
-      if (response.ok) {
-        const data = await response.json();
-        setMenuData(data);
-      } else {
-        showError('Failed to load menu data');
-      }
-    } catch (error) {
-      console.error('Error fetching menu data:', error);
-      showError('Error loading menu');
-    } finally {
-      setLoading(false);
+  // Cart Functions
+  const addToCart = (item) => {
+    const existingItem = cartItems.find(cartItem => cartItem.id === item.id);
+    if (existingItem) {
+      setCartItems(cartItems.map(cartItem => 
+        cartItem.id === item.id 
+          ? { ...cartItem, quantity: cartItem.quantity + 1 }
+          : cartItem
+      ));
+    } else {
+      setCartItems([...cartItems, { ...item, quantity: 1 }]);
     }
+    showSuccess(`${item.name} added to cart`);
   };
 
-  const handleAddToCart = (item) => {
-    addItem(item);
-    showSuccess(`${item.name} added to cart!`);
+  const updateQuantity = (id, change) => {
+    setCartItems(cartItems.map(item => 
+      item.id === id 
+        ? { ...item, quantity: Math.max(0, item.quantity + change) }
+        : item
+    ).filter(item => item.quantity > 0));
   };
+
+  const getTotalItems = () => cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const getSubtotal = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const getTax = () => getSubtotal() * 0.1;
+  const getTotal = () => getSubtotal() + getTax();
 
   const handleLogout = () => {
-    logout();
-    showSuccess('Logged out successfully! 👋');
+    if (window.confirm('Are you sure you want to logout?')) {
+      setShowProfileDropdown(false);
+      showSuccess('Logged out successfully');
+      logout();
+    }
   };
 
-  const filteredItems = () => {
-    let items = [];
-    
-    switch (activeView) {
-      case 'featured':
-        items = menuData.featured_items;
-        break;
-      case 'popular':
-        items = menuData.popular_items;
-        break;
-      default:
-        items = menuData.food_items;
-    }
-
-    // Filter by counter
-    if (selectedCounter !== 'all') {
-      items = items.filter(item => item.counter_id === parseInt(selectedCounter));
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      items = items.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    return items;
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    showSuccess(darkMode ? 'Light mode activated' : 'Dark mode activated');
   };
 
-  if (loading) {
-    return (
-      <div className="dashboard-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading delicious menu...</p>
-      </div>
-    );
-  }
+  const toggleCart = () => {
+    setShowCart(!showCart);
+  };
 
   return (
-    <div className="dashboard">
-      {/* Header */}
-      <div className="dashboard-header">
-        <div className="welcome-section">
-          <h1>Welcome back, {user?.username}! 👋</h1>
-          <p>Discover amazing food from our campus counters</p>
+    <div className={`pos-dashboard ${darkMode ? 'dark' : 'light'} ${!showCart ? 'cart-hidden' : ''}`}>
+      {/* Left Sidebar - Desktop Navigation */}
+      <aside className="sidebar-left">
+        <div className="sidebar-brand-section">
+          <img src="/KGLogo.png" alt="Logo" className="brand-logo-img" />
+          <h1 className="brand-title">KgBites</h1>
         </div>
-        
-        <div className="header-right">
-          <div className="stats-section">
-            <div className="stat-card">
-              <div className="stat-number">{menuData.counters?.length || 0}</div>
-              <div className="stat-label">Counters</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-number">{menuData.food_items?.length || 0}</div>
-              <div className="stat-label">Food Items</div>
-            </div>
-          </div>
-          
-          <button className="logout-btn" onClick={handleLogout}>
-            <svg className="logout-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+
+        <nav className="sidebar-menu">
+          <button className="menu-btn active">
+            <svg className="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
-            Logout
+            <span>Menu</span>
           </button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="dashboard-filters">
-        <div className="view-tabs">
-          <button 
-            className={`tab ${activeView === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveView('all')}
-          >
-            All Items
-          </button>
-          <button 
-            className={`tab ${activeView === 'featured' ? 'active' : ''}`}
-            onClick={() => setActiveView('featured')}
-          >
-            Featured
-          </button>
-          <button 
-            className={`tab ${activeView === 'popular' ? 'active' : ''}`}
-            onClick={() => setActiveView('popular')}
-          >
-            Popular
-          </button>
-        </div>
-
-        <div className="filter-controls">
-          <div className="search-box">
-            <svg className="search-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          <button className="menu-btn">
+            <svg className="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
             </svg>
-            <input
-              type="text"
-              placeholder="Search food items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+            <span>Orders</span>
+          </button>
+          <button className="menu-btn">
+            <svg className="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>History</span>
+          </button>
+          <button className="menu-btn">
+            <svg className="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            <span>Wallet</span>
+          </button>
+        </nav>
 
-          <select 
-            className="counter-filter"
-            value={selectedCounter}
-            onChange={(e) => setSelectedCounter(e.target.value)}
-          >
-            <option value="all">All Counters</option>
-            {menuData.counters?.map(counter => (
-              <option key={counter.id} value={counter.id}>
-                {counter.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Food Items Grid */}
-      <div className="food-grid">
-        {filteredItems().length > 0 ? (
-          filteredItems().map(item => (
-            <div key={item.id} className="food-card">
-              <div className="food-card-header">
-                <div className="counter-badge">{item.counter_name}</div>
-                <div className="stock-badge">
-                  {item.stock > 10 ? '✅ In Stock' : item.stock > 0 ? '⚠️ Low Stock' : '❌ Out of Stock'}
-                </div>
+        <div className="sidebar-footer-section">
+          <div className="user-menu" ref={dropdownRef}>
+            <button className="user-trigger-btn" onClick={() => setShowProfileDropdown(!showProfileDropdown)}>
+              <img src={avatarUrl} alt="User" className="user-img" />
+              <div className="user-text">
+                <p className="user-name-text">{userData.full_name || userData.name}</p>
+                <p className="user-role-text">Student</p>
               </div>
-              
-              <div className="food-info">
-                <h3 className="food-name">{item.name}</h3>
-                <p className="food-description">{item.description}</p>
-                
-                <div className="food-details">
-                  <div className="price">₹{item.price}</div>
-                  <div className="prep-time">🕒 {item.preparation_time} min</div>
-                </div>
-              </div>
+            </button>
 
-              <div className="food-actions">
-                {getItemQuantity(item.id) > 0 ? (
-                  <div className="quantity-display">
-                    <span className="in-cart-badge">
-                      {getItemQuantity(item.id)} in cart
-                    </span>
-                  </div>
-                ) : null}
-                
-                <button 
-                  className="add-to-cart-btn"
-                  onClick={() => handleAddToCart(item)}
-                  disabled={item.stock === 0}
-                >
-                  {item.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+            {showProfileDropdown && (
+              <div className="user-dropdown-panel">
+                <button className="dropdown-option">
+                  <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  My Profile
+                </button>
+                <button className="dropdown-option">
+                  <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6m5.2-14.2l-4.2 4.2m-2.4 2.4l-4.2 4.2m14.4 0l-4.2-4.2m-2.4-2.4l-4.2-4.2"/>
+                  </svg>
+                  Settings
+                </button>
+                <button className="dropdown-option" onClick={toggleDarkMode}>
+                  {darkMode ? (
+                    <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="5"/>
+                      <line x1="12" y1="1" x2="12" y2="3"/>
+                      <line x1="12" y1="21" x2="12" y2="23"/>
+                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                      <line x1="1" y1="12" x2="3" y2="12"/>
+                      <line x1="21" y1="12" x2="23" y2="12"/>
+                      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                  ) : (
+                    <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                  )}
+                  {darkMode ? 'Light Mode' : 'Dark Mode'}
+                </button>
+                <div className="dropdown-separator"></div>
+                <button className="dropdown-option danger" onClick={handleLogout}>
+                  <svg className="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  Logout
                 </button>
               </div>
-            </div>
-          ))
-        ) : (
-          <div className="empty-state">
-            <div className="empty-icon">🍽️</div>
-            <h3>No items found</h3>
-            <p>Try adjusting your search or filter criteria</p>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      </aside>
 
-      {/* Floating Cart */}
-      <FloatingCart />
+      {/* Main Content */}
+      <main className="main-content-area">
+        <header className="top-bar">
+          <div>
+            <h2 className="main-title">Choose Dishes</h2>
+            <p className="main-subtitle">{filteredItems.length} items available</p>
+          </div>
+
+          <div className="top-bar-actions">
+            {/* Search */}
+            <div className="search-wrapper">
+              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input
+                type="text"
+                placeholder="Search menu..."
+                className="search-field"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Notification */}
+            <button className="notify-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <span className="notify-dot"></span>
+            </button>
+
+            {/* Cart Toggle Button */}
+            <button className="cart-toggle-btn" onClick={toggleCart}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              {getTotalItems() > 0 && <span className="cart-badge">{getTotalItems()}</span>}
+            </button>
+          </div>
+        </header>
+
+        {/* Filter Section - Replaces Category Bar */}
+        <div className="filter-section">
+          <select 
+            className="filter-select-main"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            <option value="all">All Items</option>
+            <option value="veg">Vegetarian</option>
+            <option value="non-veg">Non-Vegetarian</option>
+            <option value="snacks">Snacks</option>
+          </select>
+        </div>
+
+        <div className="products-grid">
+          {filteredItems.length > 0 ? (
+            filteredItems.map(item => (
+              <div key={item.id} className="product-card">
+                <div className="product-img-box">
+                  <img src={item.image} alt={item.name} className="product-img" />
+                  {item.is_veg && <span className="veg-tag">VEG</span>}
+                  {item.available === 0 && <div className="sold-out-overlay">Sold Out</div>}
+                </div>
+
+                <div className="product-info">
+                  <h3 className="product-name">{item.name}</h3>
+                  <p className="product-desc">{item.description}</p>
+
+                  <div className="product-meta-row">
+                    <span className="meta-time">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                      {item.prep_time} min
+                    </span>
+                    <span className={`meta-stock ${item.available > 5 ? 'good' : 'low'}`}>
+                      {item.available > 0 ? `${item.available} left` : 'Out'}
+                    </span>
+                  </div>
+
+                  <div className="product-action-row">
+                    <div className="price-box">
+                      <span className="price-symbol">$</span>
+                      <span className="price-value">{item.price.toFixed(2)}</span>
+                    </div>
+
+                    {cartItems.find(ci => ci.id === item.id) ? (
+                      <div className="qty-controls">
+                        <button className="qty-btn" onClick={() => updateQuantity(item.id, -1)}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                        </button>
+                        <span className="qty-num">{cartItems.find(ci => ci.id === item.id)?.quantity}</span>
+                        <button className="qty-btn" onClick={() => updateQuantity(item.id, 1)}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="add-cart-btn"
+                        onClick={() => addToCart(item)}
+                        disabled={item.available === 0}
+                      >
+                        Add
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="empty-view">
+              <svg className="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              <h3>No items found</h3>
+              <p>Try another filter or search</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Right Sidebar - Cart */}
+      <aside className={`sidebar-right ${showCart ? 'show' : ''}`}>
+        <div className="cart-header">
+          <h3 className="cart-title">Current Order</h3>
+          <button className="cart-close-btn" onClick={toggleCart}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        {cartItems.length === 0 ? (
+          <div className="cart-empty">
+            <svg className="cart-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <p className="cart-empty-text">Cart is empty</p>
+            <span className="cart-empty-hint">Start adding items</span>
+          </div>
+        ) : (
+          <>
+            <div className="cart-items-list">
+              {cartItems.map(item => (
+                <div key={item.id} className="cart-item-row">
+                  <img src={item.image} alt={item.name} className="cart-item-img" />
+                  <div className="cart-item-info">
+                    <h4 className="cart-item-name">{item.name}</h4>
+                    <p className="cart-item-price">${item.price.toFixed(2)}</p>
+                  </div>
+                  <div className="cart-item-qty">
+                    <button className="qty-small-btn" onClick={() => updateQuantity(item.id, -1)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                      </svg>
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button className="qty-small-btn" onClick={() => updateQuantity(item.id, 1)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="cart-item-total">${(item.price * item.quantity).toFixed(2)}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="cart-summary">
+              <div className="summary-row">
+                <span>Subtotal</span>
+                <span>${getSubtotal().toFixed(2)}</span>
+              </div>
+              <div className="summary-row">
+                <span>Tax (10%)</span>
+                <span>${getTax().toFixed(2)}</span>
+              </div>
+              <div className="summary-sep"></div>
+              <div className="summary-row total">
+                <span>Total</span>
+                <span>${getTotal().toFixed(2)}</span>
+              </div>
+            </div>
+
+            <button className="checkout-btn">
+              <span>Continue to Payment</span>
+              <svg className="checkout-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
+          </>
+        )}
+      </aside>
+
+      {/* Cart Overlay for Mobile */}
+      {showCart && <div className="cart-overlay" onClick={toggleCart}></div>}
     </div>
   );
-};
+}
 
 export default Dashboard;
