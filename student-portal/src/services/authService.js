@@ -1,6 +1,12 @@
 // API Configuration
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
+// Helper function to clear invalid auth data
+const clearAuthData = () => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
+};
+
 // Helper function to get auth headers
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
@@ -14,9 +20,14 @@ const getAuthHeaders = () => {
 export const authAPI = {
   // Student registration
   registerStudent: async (userData) => {
+    // Clear any existing auth data before registration
+    clearAuthData();
+    
     const response = await fetch(`${API_BASE_URL}/accounts/auth/student/register/`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         user: {
           username: userData.email, // Using email as username
@@ -41,7 +52,9 @@ export const authAPI = {
   login: async (credentials) => {
     const response = await fetch(`${API_BASE_URL}/accounts/auth/login/`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         username: credentials.username || credentials.email,
         password: credentials.password
@@ -116,5 +129,10 @@ export const tokenService = {
   
   isAuthenticated: () => {
     return !!localStorage.getItem('authToken');
+  },
+  
+  clearAll: () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
   }
 };

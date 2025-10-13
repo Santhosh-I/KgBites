@@ -19,3 +19,5 @@ yarn-debug.log*
 __pycache__/
 
 .vscode/
+
+media/
