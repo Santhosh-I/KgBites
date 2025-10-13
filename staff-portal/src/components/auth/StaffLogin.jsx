@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import './StaffLogin.css';
-import { authAPI, tokenService } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/ToastProvider';
 
 function StaffLogin() {
   const [formData, setFormData] = useState({
-    staffId: '',
+    username: '',
     password: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const { showSuccess, showError } = useToast();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,8 +30,8 @@ function StaffLogin() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.staffId.trim()) {
-      newErrors.staffId = 'Staff ID is required';
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
     }
 
     if (!formData.password) {
@@ -49,42 +50,29 @@ function StaffLogin() {
     if (Object.keys(newErrors).length === 0) {
       setLoading(true);
       try {
-        const response = await authAPI.login({
-          staffId: formData.staffId,
+        const result = await login({
+          username: formData.username,
           password: formData.password
         });
         
-        // Store token and user data
-        tokenService.setToken(response.token);
-        tokenService.setUser(response.user);
-        
-        showSuccess(`Welcome back, ${response.user.full_name || response.user.username}! 👨‍🍳`);
-        console.log('Logged in staff:', response.user);
-        
-        // Clear form
-        setFormData({
-          staffId: '',
-          password: ''
-        });
+        if (result.success) {
+          showSuccess(`Welcome back, ${result.data.user.full_name || result.data.user.username}! 👨‍🍳`);
+          
+          // Clear form
+          setFormData({
+            username: '',
+            password: ''
+          });
+        } else {
+          setErrors({ general: result.error });
+          showError(result.error);
+        }
         
       } catch (error) {
         console.error('Login error:', error);
-        try {
-          const errorData = JSON.parse(error.message);
-          if (errorData.non_field_errors) {
-            const errorMsg = errorData.non_field_errors[0];
-            setErrors({ general: errorMsg });
-            showError(errorMsg);
-          } else {
-            const errorMsg = 'Invalid credentials. Please try again.';
-            setErrors({ general: errorMsg });
-            showError(errorMsg);
-          }
-        } catch {
-          const errorMsg = 'Network error. Please check your connection.';
-          setErrors({ general: errorMsg });
-          showError(errorMsg);
-        }
+        const errorMsg = 'Network error. Please check your connection.';
+        setErrors({ general: errorMsg });
+        showError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -122,17 +110,17 @@ function StaffLogin() {
                 <div className="staff-error-message general-error">{errors.general}</div>
               )}
               <div className="staff-input-group">
-                <label htmlFor="staffId">Staff ID</label>
+                <label htmlFor="username">Username</label>
                 <input
                   type="text"
-                  id="staffId"
-                  name="staffId"
-                  value={formData.staffId}
+                  id="username"
+                  name="username"
+                  value={formData.username}
                   onChange={handleChange}
-                  placeholder="Enter your Staff ID"
-                  className={errors.staffId ? 'error' : ''}
+                  placeholder="Enter your username"
+                  className={errors.username ? 'error' : ''}
                 />
-                {errors.staffId && <span className="staff-error-message">{errors.staffId}</span>}
+                {errors.username && <span className="staff-error-message">{errors.username}</span>}
               </div>
 
               <div className="staff-input-group">

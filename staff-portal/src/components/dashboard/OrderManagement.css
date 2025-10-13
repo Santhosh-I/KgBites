@@ -1,0 +1,347 @@
+/* Order Management Styles */
+.order-management {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Order Header */
+.order-header {
+  margin-bottom: 30px;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.status-filter,
+.date-filter {
+  padding: 14px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 160px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.status-filter:focus,
+.date-filter:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  background: linear-gradient(145deg, #059669 0%, #047857 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 25px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(145deg, #047857 0%, #065f46 100%);
+}
+
+/* Order Stats */
+.order-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 15px;
+  min-width: 120px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.stat-item.pending {
+  background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+  box-shadow: 0 4px 15px rgba(253, 203, 110, 0.3);
+}
+
+.stat-item.preparing {
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+  box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* Orders Container */
+.orders-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 25px;
+}
+
+/* Order Card */
+.order-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid #3b82f6;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.order-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 
+    0 10px 25px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.order-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f8f9fa;
+}
+
+.order-info h3 {
+  margin: 0 0 6px 0;
+  font-size: 21px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.025em;
+}
+
+.order-customer {
+  margin: 0 0 6px 0;
+  color: #475569;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.order-time {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.order-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 24px;
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+  box-shadow: 
+    0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.status-icon {
+  font-size: 16px;
+}
+
+/* Order Items */
+.order-items h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.item-name {
+  flex: 1;
+  font-weight: 600;
+  color: #333;
+}
+
+.item-quantity {
+  font-size: 14px;
+  color: #666;
+  margin: 0 15px;
+}
+
+.item-price {
+  font-weight: 700;
+  color: #667eea;
+}
+
+/* Order Footer */
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.order-total {
+  font-size: 18px;
+  color: #333;
+}
+
+.order-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 12px;
+}
+
+.action-btn.confirm {
+  background: #00b894;
+  color: white;
+}
+
+.action-btn.cancel {
+  background: #e17055;
+  color: white;
+}
+
+.action-btn.prepare {
+  background: #0984e3;
+  color: white;
+}
+
+.action-btn.ready {
+  background: #00cec9;
+  color: white;
+}
+
+.action-btn.complete {
+  background: #00b894;
+  color: white;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* No Orders State */
+.no-orders {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #666;
+}
+
+.no-orders span {
+  font-size: 60px;
+  margin-bottom: 20px;
+}
+
+.no-orders p {
+  font-size: 18px;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .orders-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .order-stats {
+    justify-content: center;
+  }
+  
+  .order-header-card {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .order-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .order-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

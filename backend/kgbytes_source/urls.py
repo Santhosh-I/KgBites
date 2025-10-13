@@ -23,6 +23,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include('accounts.urls')),
     path('api/menu/', include('menu.urls')),
+    path('api/orders/', include('orders.urls')),
+    path('api/staff/', include('orders.urls')),  # Staff dashboard endpoints
+    path('api/analytics/', include('orders.urls')),  # Analytics endpoints
 ]
 
 # Serve media files during development

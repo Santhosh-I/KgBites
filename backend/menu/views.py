@@ -44,6 +44,58 @@ def get_menu_data(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def get_all_items(request):
+    """Get all food items for staff management"""
+    try:
+        items = FoodItem.objects.all().select_related('counter')
+        return Response(FoodItemSerializer(items, many=True).data)
+    except Exception as e:
+        return Response({
+            'error': 'Failed to fetch items',
+            'detail': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_item(request, item_id):
+    """Update food item (stock, availability, etc.)"""
+    try:
+        from accounts.models import CanteenStaff
+        
+        # Check if user is staff
+        try:
+            staff = CanteenStaff.objects.get(user=request.user)
+        except CanteenStaff.DoesNotExist:
+            return Response(
+                {'error': 'Access denied. Staff only.'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        item = FoodItem.objects.get(id=item_id)
+        
+        # Update allowed fields
+        if 'stock' in request.data:
+            item.stock = request.data['stock']
+        if 'is_available' in request.data:
+            item.is_available = request.data['is_available']
+        if 'price' in request.data:
+            item.price = request.data['price']
+            
+        item.save()
+        return Response(FoodItemSerializer(item).data)
+        
+    except FoodItem.DoesNotExist:
+        return Response({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'error': 'Failed to update item',
+            'detail': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_counters(request):
     """Get all available counters"""
     try:

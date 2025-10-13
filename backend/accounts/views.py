@@ -128,3 +128,43 @@ def user_profile(request):
                 },
                 'user_type': 'admin'
             })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def staff_login(request):
+    """Staff-specific login endpoint"""
+    serializer = UserLoginSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.validated_data['user']
+        
+        # Check if user is staff
+        try:
+            staff = CanteenStaff.objects.get(user=user)
+            token, created = Token.objects.get_or_create(user=user)
+            
+            return Response({
+                'message': 'Login successful',
+                'token': token.key,
+                'user': StaffSerializer(staff).data,
+                'user_type': 'staff'
+            }, status=status.HTTP_200_OK)
+        except CanteenStaff.DoesNotExist:
+            return Response({
+                'error': 'Invalid credentials or not authorized as staff'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def staff_profile(request):
+    """Get current staff profile"""
+    try:
+        staff = CanteenStaff.objects.get(user=request.user)
+        return Response(StaffSerializer(staff).data)
+    except CanteenStaff.DoesNotExist:
+        return Response({
+            'error': 'Staff profile not found'
+        }, status=status.HTTP_404_NOT_FOUND)
