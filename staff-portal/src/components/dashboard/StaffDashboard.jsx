@@ -577,10 +577,6 @@ function StaffDashboard() {
           
           {showProfileDropdown && (
             <div className="staff-dropdown-menu">
-              <button onClick={() => setDarkMode(!darkMode)} className="staff-dropdown-item">
-                <span>{darkMode ? '☀️' : '🌙'}</span>
-                {darkMode ? 'Light Mode' : 'Dark Mode'}
-              </button>
               <button onClick={handleLogout} className="staff-dropdown-item logout">
                 <span>🚪</span>
                 Logout
