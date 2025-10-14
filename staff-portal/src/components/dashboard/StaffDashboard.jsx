@@ -4,6 +4,7 @@ import { useToast } from '../common/ToastProvider';
 import './StaffDashboard.css';
 import menuIcon from '../../assets/menu.png';
 import foodIcon from '../../assets/food.png';
+import orderManagementIcon from '../../assets/orderManagement.png';
 
 // Item Card Component
 function ItemCard({ item, onEdit, onDelete }) {
@@ -602,7 +603,7 @@ function StaffDashboard() {
             )}
             {activeView === 'orders' && (
               <>
-                <span className="header-emoji">📋</span>
+                <img src={orderManagementIcon} alt="Order Management" className="header-icon-img" />
                 <div className="staff-header-text">
                   <h1 className="staff-page-title">Order Management</h1>
                   <p className="staff-page-subtitle">Track and manage customer orders</p>
@@ -707,7 +708,9 @@ function StaffDashboard() {
           {activeView === 'orders' && (
             <div className="staff-orders-content">
               <div className="staff-coming-soon">
-                <div className="coming-soon-icon">📋</div>
+                <div className="coming-soon-icon">
+                  <img src={orderManagementIcon} alt="Order Management" className="coming-soon-icon-img" />
+                </div>
                 <h3>Order Management</h3>
                 <p>Coming soon! This feature will allow you to manage customer orders.</p>
               </div>

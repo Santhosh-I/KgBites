@@ -287,10 +287,12 @@ body.dark-theme {
 }
 
 .header-icon-img {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
   flex-shrink: 0;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 .header-emoji {
@@ -693,8 +695,18 @@ body.dark-theme {
 
 .coming-soon-icon {
   font-size: 5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.17rem;
   opacity: 0.6;
+}
+
+.coming-soon-icon-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  opacity: 0.8;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  filter: none;
 }
 
 .staff-coming-soon h3 {
