@@ -155,29 +155,21 @@ def get_food_item_detail(request, item_id):
 def staff_get_all_items(request):
     """Get all items for staff management (including unavailable ones)"""
     try:
-        print(f"🔍 Staff API Call - User: {request.user.username if request.user.is_authenticated else 'Anonymous'}")
-        
         # Verify user is staff
         try:
-            staff = CanteenStaff.objects.get(user=request.user)
-            print(f"✅ Staff found: {staff.full_name}")
+            CanteenStaff.objects.get(user=request.user)
         except CanteenStaff.DoesNotExist:
-            print(f"❌ Staff not found for user: {request.user.username}")
             return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
         
         items = FoodItem.objects.all().select_related('counter').order_by('-created_at')
         counters = Counter.objects.all()
         
-        print(f"📊 Data counts - Items: {items.count()}, Counters: {counters.count()}")
-        
         response_data = {
-            'items': FoodItemSerializer(items, many=True).data,
+            'items': FoodItemSerializer(items, many=True, context={'request': request}).data,
             'counters': CounterSerializer(counters, many=True).data,
             'total_items': items.count(),
             'available_items': items.filter(is_available=True).count(),
         }
-        
-        print(f"📤 Sending response with {len(response_data['items'])} items")
         
         return Response(response_data, status=status.HTTP_200_OK)
         
@@ -188,7 +180,7 @@ def staff_get_all_items(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def staff_create_item(request):
-    """Create a new food item (staff only)"""
+    """Create a new food item (staff only) - supports both file upload and image URL"""
     try:
         # Verify user is staff
         try:
@@ -210,6 +202,15 @@ def staff_create_item(request):
         except Counter.DoesNotExist:
             return Response({'error': 'Counter not found'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Handle image - either file upload or URL
+        image_file = request.FILES.get('image')
+        image_url = data.get('image_url', '').strip()
+        
+        # Handle boolean conversion for is_available
+        is_available = data.get('is_available', True)
+        if isinstance(is_available, str):
+            is_available = is_available.lower() in ['true', '1', 'yes', 'on']
+        
         # Create the food item
         food_item = FoodItem.objects.create(
             name=data['name'],
@@ -217,18 +218,25 @@ def staff_create_item(request):
             price=float(data['price']),
             counter=counter,
             stock=int(data['stock']),
-            is_available=data.get('is_available', True),
-            image_url=data.get('image_url', '')
+            is_available=bool(is_available),
+            image=image_file if image_file else None,
+            image_url=image_url
         )
         
         return Response({
             'message': 'Item created successfully',
-            'item': FoodItemSerializer(food_item).data
+            'item': FoodItemSerializer(food_item, context={'request': request}).data
         }, status=status.HTTP_201_CREATED)
         
     except ValueError as e:
+        print(f"❌ ValueError in staff_create_item: {e}")
         return Response({'error': 'Invalid price or stock value'}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
+        print(f"❌ Exception in staff_create_item: {e}")
+        print(f"❌ Request data: {data}")
+        print(f"❌ Request FILES: {request.FILES}")
+        import traceback
+        traceback.print_exc()
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -256,9 +264,17 @@ def staff_update_item(request, item_id):
         if 'stock' in data:
             food_item.stock = int(data['stock'])
         if 'is_available' in data:
-            food_item.is_available = data['is_available']
+            is_available = data['is_available']
+            if isinstance(is_available, str):
+                is_available = is_available.lower() in ['true', '1', 'yes', 'on']
+            food_item.is_available = bool(is_available)
+        
+        # Handle image updates - either file upload or URL
+        if 'image' in request.FILES:
+            food_item.image = request.FILES['image']
         if 'image_url' in data:
             food_item.image_url = data['image_url']
+            
         if 'counter_id' in data:
             try:
                 counter = Counter.objects.get(id=data['counter_id'])
@@ -270,12 +286,18 @@ def staff_update_item(request, item_id):
         
         return Response({
             'message': 'Item updated successfully',
-            'item': FoodItemSerializer(food_item).data
+            'item': FoodItemSerializer(food_item, context={'request': request}).data
         }, status=status.HTTP_200_OK)
         
     except ValueError as e:
+        print(f"❌ ValueError in staff_update_item: {e}")
         return Response({'error': 'Invalid price or stock value'}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
+        print(f"❌ Exception in staff_update_item: {e}")
+        print(f"❌ Request data: {data}")
+        print(f"❌ Request FILES: {request.FILES}")
+        import traceback
+        traceback.print_exc()
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

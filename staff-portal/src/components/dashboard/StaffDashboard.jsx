@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/ToastProvider';
+import ImageUpload from '../common/ImageUpload';
 import './StaffDashboard.css';
 
 // Item Card Component
@@ -9,9 +10,9 @@ function ItemCard({ item, onEdit, onDelete }) {
     <div className="staff-item-card">
       <div className="item-image">
         <img 
-          src={item.image_url || '/default-food.jpg'} 
+          src={item.image_display_url || item.image_url || '/default-food.svg'} 
           alt={item.name}
-          onError={(e) => e.target.src = '/default-food.jpg'}
+          onError={(e) => e.target.src = '/default-food.svg'}
         />
         <div className={`item-status ${item.is_available ? 'available' : 'unavailable'}`}>
           {item.is_available ? 'Available' : 'Unavailable'}
@@ -58,8 +59,17 @@ function AddItemModal({ counters, onSave, onClose }) {
     counter_id: '',
     stock: '',
     image_url: '',
+    image_file: null,
     is_available: true
   });
+
+  const handleImageChange = (imageData) => {
+    setFormData(prev => ({
+      ...prev,
+      image_file: imageData.type === 'file' ? imageData.file : null,
+      image_url: imageData.type === 'url' ? imageData.url : ''
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -148,18 +158,10 @@ function AddItemModal({ counters, onSave, onClose }) {
             </select>
           </div>
           
-          <div className="form-group">
-            <label htmlFor="add-item-image">Image URL (optional)</label>
-            <input
-              id="add-item-image"
-              name="image_url"
-              type="url"
-              value={formData.image_url}
-              onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-              placeholder="https://example.com/image.jpg"
-              autoComplete="url"
-            />
-          </div>
+          <ImageUpload 
+            onImageChange={handleImageChange}
+            initialImageUrl={formData.image_url}
+          />
           
           <div className="form-group">
             <label className="checkbox-label">
@@ -197,8 +199,17 @@ function EditItemModal({ item, counters, onSave, onClose }) {
     counter_id: item.counter?.id || item.counter_id,
     stock: item.stock,
     image_url: item.image_url || '',
+    image_file: null,
     is_available: item.is_available
   });
+
+  const handleImageChange = (imageData) => {
+    setFormData(prev => ({
+      ...prev,
+      image_file: imageData.type === 'file' ? imageData.file : null,
+      image_url: imageData.type === 'url' ? imageData.url : (imageData.type === 'none' ? '' : prev.image_url)
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -286,18 +297,11 @@ function EditItemModal({ item, counters, onSave, onClose }) {
             </select>
           </div>
           
-          <div className="form-group">
-            <label htmlFor="edit-item-image">Image URL (optional)</label>
-            <input
-              id="edit-item-image"
-              name="image_url"
-              type="url"
-              value={formData.image_url}
-              onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-              placeholder="https://example.com/image.jpg"
-              autoComplete="url"
-            />
-          </div>
+          <ImageUpload 
+            onImageChange={handleImageChange}
+            initialImageUrl={item.image_display_url || item.image_url || ''}
+            initialImage={item.image_display_url && !item.image_url ? item.image_display_url : null}
+          />
           
           <div className="form-group">
             <label className="checkbox-label">
@@ -423,13 +427,35 @@ function StaffDashboard() {
     try {
       const token = localStorage.getItem('token');
       
+      // Create FormData for multipart/form-data if we have a file
+      let requestBody;
+      let headers = {
+        'Authorization': `Token ${token}`,
+      };
+
+      if (itemData.image_file) {
+        // Use FormData for file uploads
+        const formData = new FormData();
+        Object.keys(itemData).forEach(key => {
+          if (key === 'image_file') {
+            formData.append('image', itemData[key]);
+          } else if (itemData[key] !== null && itemData[key] !== '') {
+            formData.append(key, itemData[key]);
+          }
+        });
+        requestBody = formData;
+        // Don't set Content-Type for FormData, let the browser set it
+      } else {
+        // Use JSON for URL-based images or no image
+        headers['Content-Type'] = 'application/json';
+        const { image_file, ...jsonData } = itemData; // Remove image_file from JSON data
+        requestBody = JSON.stringify(jsonData);
+      }
+      
       const response = await fetch('http://127.0.0.1:8000/api/menu/staff/items/create/', {
         method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(itemData),
+        headers: headers,
+        body: requestBody,
       });
 
       if (response.ok) {
@@ -452,13 +478,35 @@ function StaffDashboard() {
     try {
       const token = localStorage.getItem('token');
       
+      // Create FormData for multipart/form-data if we have a file
+      let requestBody;
+      let headers = {
+        'Authorization': `Token ${token}`,
+      };
+
+      if (itemData.image_file) {
+        // Use FormData for file uploads
+        const formData = new FormData();
+        Object.keys(itemData).forEach(key => {
+          if (key === 'image_file') {
+            formData.append('image', itemData[key]);
+          } else if (itemData[key] !== null && itemData[key] !== '') {
+            formData.append(key, itemData[key]);
+          }
+        });
+        requestBody = formData;
+        // Don't set Content-Type for FormData, let the browser set it
+      } else {
+        // Use JSON for URL-based images or no image changes
+        headers['Content-Type'] = 'application/json';
+        const { image_file, ...jsonData } = itemData; // Remove image_file from JSON data
+        requestBody = JSON.stringify(jsonData);
+      }
+      
       const response = await fetch(`http://127.0.0.1:8000/api/menu/staff/items/${itemId}/update/`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(itemData),
+        headers: headers,
+        body: requestBody,
       });
 
       if (response.ok) {
