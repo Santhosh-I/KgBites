@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/ToastProvider';
 import './StaffDashboard.css';
 import menuIcon from '../../assets/menu.png';
+import foodIcon from '../../assets/food.png';
 
 // Item Card Component
 function ItemCard({ item, onEdit, onDelete }) {
@@ -681,7 +682,7 @@ function StaffDashboard() {
                     ))
                   ) : (
                     <div className="staff-empty-state">
-                      <div className="empty-icon">🍽️</div>
+                      <img src={foodIcon} alt="No items" className="empty-state-icon" />
                       <h3>No items found</h3>
                       <p>Create your first menu item to get started</p>
                       <button 

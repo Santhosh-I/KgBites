@@ -623,6 +623,14 @@ body.dark-theme {
   color: var(--text-secondary);
 }
 
+.empty-state-icon {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin-bottom: 0.10rem;
+  opacity: 0.7;
+}
+
 .staff-empty-state h3 {
   font-size: 18px;
   color: var(--text-primary);
