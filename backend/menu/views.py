@@ -10,7 +10,6 @@ from accounts.models import CanteenStaff
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_menu_data(request):
     """Get complete menu data for dashboard"""
     try:
@@ -97,7 +96,6 @@ def update_item(request, item_id):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_counters(request):
     """Get all available counters"""
     try:
