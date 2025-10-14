@@ -5,6 +5,7 @@ import './StaffDashboard.css';
 import menuIcon from '../../assets/menu.png';
 import foodIcon from '../../assets/food.png';
 import orderManagementIcon from '../../assets/orderManagement.png';
+import analyticsIcon from '../../assets/analytics.png';
 
 // Item Card Component
 function ItemCard({ item, onEdit, onDelete }) {
@@ -603,7 +604,7 @@ function StaffDashboard() {
             )}
             {activeView === 'orders' && (
               <>
-                <img src={orderManagementIcon} alt="Order Management" className="header-icon-img" />
+                <img src={orderManagementIcon} alt="Order Management" className="header-icon-img order-management-header-icon" />
                 <div className="staff-header-text">
                   <h1 className="staff-page-title">Order Management</h1>
                   <p className="staff-page-subtitle">Track and manage customer orders</p>
@@ -612,7 +613,7 @@ function StaffDashboard() {
             )}
             {activeView === 'analytics' && (
               <>
-                <span className="header-emoji">📊</span>
+                <img src={analyticsIcon} alt="Analytics Dashboard" className="header-icon-img" />
                 <div className="staff-header-text">
                   <h1 className="staff-page-title">Analytics Dashboard</h1>
                   <p className="staff-page-subtitle">View performance insights</p>
@@ -720,7 +721,9 @@ function StaffDashboard() {
           {activeView === 'analytics' && (
             <div className="staff-analytics-content">
               <div className="staff-coming-soon">
-                <div className="coming-soon-icon">📊</div>
+                <div className="coming-soon-icon">
+                  <img src={analyticsIcon} alt="Analytics Dashboard" className="coming-soon-icon-img" />
+                </div>
                 <h3>Analytics Dashboard</h3>
                 <p>Coming soon! View detailed analytics and insights here.</p>
               </div>
