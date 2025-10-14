@@ -29,10 +29,10 @@ def get_menu_data(request):
         popular_items = food_items.order_by('-created_at')[:8]
         
         return Response({
-            'counters': CounterSerializer(counters, many=True).data,
-            'food_items': FoodItemSerializer(food_items, many=True).data,
-            'featured_items': FoodItemSerializer(featured_items, many=True).data,
-            'popular_items': FoodItemSerializer(popular_items, many=True).data,
+            'counters': CounterSerializer(counters, many=True, context={'request': request}).data,
+            'food_items': FoodItemSerializer(food_items, many=True, context={'request': request}).data,
+            'featured_items': FoodItemSerializer(featured_items, many=True, context={'request': request}).data,
+            'popular_items': FoodItemSerializer(popular_items, many=True, context={'request': request}).data,
             'total_counters': counters.count(),
             'total_items': food_items.count(),
         }, status=status.HTTP_200_OK)
@@ -50,7 +50,7 @@ def get_all_items(request):
     """Get all food items for staff management"""
     try:
         items = FoodItem.objects.all().select_related('counter')
-        return Response(FoodItemSerializer(items, many=True).data)
+        return Response(FoodItemSerializer(items, many=True, context={'request': request}).data)
     except Exception as e:
         return Response({
             'error': 'Failed to fetch items',
@@ -85,7 +85,7 @@ def update_item(request, item_id):
             item.price = request.data['price']
             
         item.save()
-        return Response(FoodItemSerializer(item).data)
+        return Response(FoodItemSerializer(item, context={'request': request}).data)
         
     except FoodItem.DoesNotExist:
         return Response({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -128,7 +128,7 @@ def get_food_items(request):
                 Q(description__icontains=search_query)
             )
             
-        return Response(FoodItemSerializer(food_items, many=True).data, status=status.HTTP_200_OK)
+        return Response(FoodItemSerializer(food_items, many=True, context={'request': request}).data, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -142,7 +142,7 @@ def get_food_item_detail(request, item_id):
             id=item_id, 
             is_available=True
         )
-        return Response(FoodItemSerializer(food_item).data, status=status.HTTP_200_OK)
+        return Response(FoodItemSerializer(food_item, context={'request': request}).data, status=status.HTTP_200_OK)
     except FoodItem.DoesNotExist:
         return Response({'error': 'Food item not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:

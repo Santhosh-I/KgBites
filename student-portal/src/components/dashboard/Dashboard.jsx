@@ -322,7 +322,7 @@ function Dashboard() {
             filteredItems.map(item => (
               <div key={item.id} className="product-card">
                 <div className="product-img-box">
-                  <img src={item.image} alt={item.name} className="product-img" />
+                  <img src={item.image_display_url || item.image_url || '/placeholder-food.jpg'} alt={item.name} className="product-img" />
                   {item.is_veg && <span className="veg-tag">VEG</span>}
                   {item.stock === 0 && <div className="sold-out-overlay">Sold Out</div>}
                 </div>
@@ -426,7 +426,7 @@ function Dashboard() {
             <div className="cart-items-list">
               {cartItems.map(item => (
                 <div key={item.id} className="cart-item-row">
-                  <img src={item.image} alt={item.name} className="cart-item-img" />
+                  <img src={item.image_display_url || item.image_url || '/placeholder-food.jpg'} alt={item.name} className="cart-item-img" />
                   <div className="cart-item-info">
                     <h4 className="cart-item-name">{item.name}</h4>
                     <p className="cart-item-price">${parseFloat(item.price || 0).toFixed(2)}</p>
