@@ -280,17 +280,44 @@ body.dark-theme {
   z-index: 50;
 }
 
-.staff-header-left h1 {
+.staff-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.header-emoji {
+  font-size: 48px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.staff-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.staff-page-title {
   font-size: 28px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 4px 0;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .staff-page-subtitle {
   color: var(--text-secondary);
   margin: 0;
   font-size: 14px;
+  line-height: 1.4;
 }
 
 .staff-primary-btn {
