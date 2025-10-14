@@ -111,9 +111,12 @@ const OrderManagement = ({ onDataUpdate }) => {
       <div className="order-header">
         <div className="filter-controls">
           <select
+            id="order-status-filter"
+            name="status_filter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="status-filter"
+            autoComplete="off"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -125,9 +128,12 @@ const OrderManagement = ({ onDataUpdate }) => {
           </select>
           
           <select
+            id="order-date-filter"
+            name="date_filter"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
             className="date-filter"
+            autoComplete="off"
           >
             <option value="today">Today</option>
             <option value="yesterday">Yesterday</option>

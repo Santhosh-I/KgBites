@@ -119,6 +119,7 @@ function StaffLogin() {
                   onChange={handleChange}
                   placeholder="Enter your username"
                   className={errors.username ? 'error' : ''}
+                  autoComplete="username"
                 />
                 {errors.username && <span className="staff-error-message">{errors.username}</span>}
               </div>
@@ -133,6 +134,7 @@ function StaffLogin() {
                   onChange={handleChange}
                   placeholder="Enter your password"
                   className={errors.password ? 'error' : ''}
+                  autoComplete="current-password"
                 />
                 {errors.password && <span className="staff-error-message">{errors.password}</span>}
               </div>

@@ -119,18 +119,24 @@ const ItemManagement = ({ onDataUpdate }) => {
         <div className="header-controls">
           <div className="search-container">
             <input
+              id="item-management-search"
+              name="search"
               type="text"
               placeholder="Search items..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
+              autoComplete="off"
             />
           </div>
           
           <select
+            id="item-management-counter"
+            name="selected_counter"
             value={selectedCounter}
             onChange={(e) => setSelectedCounter(e.target.value)}
             className="counter-select"
+            autoComplete="off"
           >
             <option value="all">All Counters</option>
             {counters.map(counter => (

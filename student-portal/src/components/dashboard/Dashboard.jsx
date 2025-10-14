@@ -268,11 +268,14 @@ function Dashboard() {
                 <path d="m21 21-4.35-4.35"/>
               </svg>
               <input
+                id="student-search-menu"
+                name="search"
                 type="text"
                 placeholder="Search menu..."
                 className="search-field"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
               />
             </div>
 
@@ -300,9 +303,12 @@ function Dashboard() {
         {/* Filter Section - Replaces Category Bar */}
         <div className="filter-section">
           <select 
+            id="student-filter-type"
+            name="filter_type"
             className="filter-select-main"
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
+            autoComplete="off"
           >
             <option value="all">All Items</option>
             <option value="veg">Vegetarian</option>

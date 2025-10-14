@@ -10,6 +10,7 @@ from accounts.models import CanteenStaff
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_menu_data(request):
     """Get complete menu data for dashboard"""
     try:
@@ -96,6 +97,7 @@ def update_item(request, item_id):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_counters(request):
     """Get all available counters"""
     try:
@@ -153,19 +155,31 @@ def get_food_item_detail(request, item_id):
 def staff_get_all_items(request):
     """Get all items for staff management (including unavailable ones)"""
     try:
+        print(f"🔍 Staff API Call - User: {request.user.username if request.user.is_authenticated else 'Anonymous'}")
+        
         # Verify user is staff
-        if not hasattr(request.user, 'canteen_staff_profile'):
+        try:
+            staff = CanteenStaff.objects.get(user=request.user)
+            print(f"✅ Staff found: {staff.full_name}")
+        except CanteenStaff.DoesNotExist:
+            print(f"❌ Staff not found for user: {request.user.username}")
             return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
         
         items = FoodItem.objects.all().select_related('counter').order_by('-created_at')
         counters = Counter.objects.all()
         
-        return Response({
+        print(f"📊 Data counts - Items: {items.count()}, Counters: {counters.count()}")
+        
+        response_data = {
             'items': FoodItemSerializer(items, many=True).data,
             'counters': CounterSerializer(counters, many=True).data,
             'total_items': items.count(),
             'available_items': items.filter(is_available=True).count(),
-        }, status=status.HTTP_200_OK)
+        }
+        
+        print(f"📤 Sending response with {len(response_data['items'])} items")
+        
+        return Response(response_data, status=status.HTTP_200_OK)
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -177,7 +191,9 @@ def staff_create_item(request):
     """Create a new food item (staff only)"""
     try:
         # Verify user is staff
-        if not hasattr(request.user, 'canteen_staff_profile'):
+        try:
+            CanteenStaff.objects.get(user=request.user)
+        except CanteenStaff.DoesNotExist:
             return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
         
         data = request.data
@@ -222,7 +238,9 @@ def staff_update_item(request, item_id):
     """Update an existing food item (staff only)"""
     try:
         # Verify user is staff
-        if not hasattr(request.user, 'canteen_staff_profile'):
+        try:
+            CanteenStaff.objects.get(user=request.user)
+        except CanteenStaff.DoesNotExist:
             return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
         
         food_item = get_object_or_404(FoodItem, id=item_id)
@@ -267,7 +285,9 @@ def staff_delete_item(request, item_id):
     """Delete a food item (staff only)"""
     try:
         # Verify user is staff
-        if not hasattr(request.user, 'canteen_staff_profile'):
+        try:
+            CanteenStaff.objects.get(user=request.user)
+        except CanteenStaff.DoesNotExist:
             return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
         
         food_item = get_object_or_404(FoodItem, id=item_id)
@@ -288,7 +308,9 @@ def staff_create_counter(request):
     """Create a new counter (staff only)"""
     try:
         # Verify user is staff
-        if not hasattr(request.user, 'canteen_staff_profile'):
+        try:
+            CanteenStaff.objects.get(user=request.user)
+        except CanteenStaff.DoesNotExist:
             return Response({'error': 'Staff access required'}, status=status.HTTP_403_FORBIDDEN)
         
         data = request.data

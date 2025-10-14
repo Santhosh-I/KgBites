@@ -92,9 +92,12 @@ const Analytics = () => {
       <div className="analytics-header">
         <h2>Analytics Dashboard</h2>
         <select
+          id="analytics-period"
+          name="selected_period"
           value={selectedPeriod}
           onChange={(e) => setSelectedPeriod(e.target.value)}
           className="period-select"
+          autoComplete="off"
         >
           <option value="today">Today</option>
           <option value="week">This Week</option>

@@ -14,14 +14,13 @@ class CounterSerializer(serializers.ModelSerializer):
 
 
 class FoodItemSerializer(serializers.ModelSerializer):
-    counter_name = serializers.CharField(source='counter.name', read_only=True)
-    counter_id = serializers.CharField(source='counter.id', read_only=True)
+    counter = CounterSerializer(read_only=True)
     
     class Meta:
         model = FoodItem
         fields = [
             'id', 'name', 'description', 'price', 'image', 'image_url', 'stock', 
-            'is_available', 'counter_name', 'counter_id', 'created_at', 'updated_at'
+            'is_available', 'counter', 'created_at', 'updated_at'
         ]
 
 

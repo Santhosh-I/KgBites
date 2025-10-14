@@ -219,6 +219,7 @@ function Login() {
                     onChange={handleChange}
                     placeholder="Enter your full name"
                     className={errors.name ? 'error' : ''}
+                    autoComplete="name"
                   />
                   {errors.name && <span className="error-message">{errors.name}</span>}
                 </div>
@@ -234,6 +235,7 @@ function Login() {
                   onChange={handleChange}
                   placeholder={isLogin ? 'Username' : 'Email'}
                   className={errors.email ? 'error' : ''}
+                  autoComplete={isLogin ? 'username' : 'email'}
                 />
                 {errors.email && <span className="error-message">{errors.email}</span>}
               </div>
@@ -249,6 +251,7 @@ function Login() {
                     onChange={handleChange}
                     placeholder="Roll Number"
                     className={errors.rollNumber ? 'error' : ''}
+                    autoComplete="off"
                   />
                   {errors.rollNumber && <span className="error-message">{errors.rollNumber}</span>}
                 </div>
@@ -264,6 +267,7 @@ function Login() {
                   onChange={handleChange}
                   placeholder="Password"
                   className={errors.password ? 'error' : ''}
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
                 />
                 {errors.password && <span className="error-message">{errors.password}</span>}
               </div>
@@ -279,6 +283,7 @@ function Login() {
                     onChange={handleChange}
                     placeholder="Confirm Password"
                     className={errors.confirmPassword ? 'error' : ''}
+                    autoComplete="new-password"
                   />
                   {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
                 </div>

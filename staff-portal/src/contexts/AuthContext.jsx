@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
       const userType = localStorage.getItem('userType');
       
       if (token && userType === 'staff') {
-        const response = await fetch('http://localhost:8000/api/accounts/user/', {
+        const response = await fetch('http://127.0.0.1:8000/api/accounts/staff/profile/', {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
           setUser(userData);
           setIsAuthenticated(true);
         } else {
-          // Token is invalid
+          // Token is invalid or user is not staff
           localStorage.removeItem('token');
           localStorage.removeItem('userType');
           setUser(null);
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const response = await fetch('http://localhost:8000/api/accounts/staff/login/', {
+      const response = await fetch('http://127.0.0.1:8000/api/accounts/staff/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,10 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/ToastProvider';
 import './StaffDashboard.css';
-import menuIcon from '../../assets/menu.png';
-import foodIcon from '../../assets/food.png';
-import orderManagementIcon from '../../assets/orderManagement.png';
-import analyticsIcon from '../../assets/analytics.png';
 
 // Item Card Component
 function ItemCard({ item, onEdit, onDelete }) {
@@ -25,7 +21,7 @@ function ItemCard({ item, onEdit, onDelete }) {
       <div className="item-details">
         <h3 className="item-name">{item.name}</h3>
         <p className="item-description">{item.description}</p>
-        <div className="item-counter">📍 {item.counter.name}</div>
+        <div className="item-counter">📍 {item.counter?.name || item.counter_name || 'Unknown Counter'}</div>
         
         <div className="item-stats">
           <div className="item-price">₹{item.price}</div>
@@ -80,52 +76,67 @@ function AddItemModal({ counters, onSave, onClose }) {
         
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
-            <label>Item Name *</label>
+            <label htmlFor="add-item-name">Item Name *</label>
             <input
+              id="add-item-name"
+              name="name"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
+              autoComplete="off"
               required
             />
           </div>
           
           <div className="form-group">
-            <label>Description *</label>
+            <label htmlFor="add-item-description">Description *</label>
             <textarea
+              id="add-item-description"
+              name="description"
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
+              autoComplete="off"
               required
             />
           </div>
           
           <div className="form-row">
             <div className="form-group">
-              <label>Price (₹) *</label>
+              <label htmlFor="add-item-price">Price (₹) *</label>
               <input
+                id="add-item-price"
+                name="price"
                 type="number"
                 step="0.01"
                 value={formData.price}
                 onChange={(e) => setFormData({...formData, price: e.target.value})}
+                autoComplete="off"
                 required
               />
             </div>
             
             <div className="form-group">
-              <label>Stock *</label>
+              <label htmlFor="add-item-stock">Stock *</label>
               <input
+                id="add-item-stock"
+                name="stock"
                 type="number"
                 value={formData.stock}
                 onChange={(e) => setFormData({...formData, stock: e.target.value})}
+                autoComplete="off"
                 required
               />
             </div>
           </div>
           
           <div className="form-group">
-            <label>Counter *</label>
+            <label htmlFor="add-item-counter">Counter *</label>
             <select
+              id="add-item-counter"
+              name="counter_id"
               value={formData.counter_id}
               onChange={(e) => setFormData({...formData, counter_id: e.target.value})}
+              autoComplete="off"
               required
             >
               <option value="">Select Counter</option>
@@ -138,18 +149,23 @@ function AddItemModal({ counters, onSave, onClose }) {
           </div>
           
           <div className="form-group">
-            <label>Image URL (optional)</label>
+            <label htmlFor="add-item-image">Image URL (optional)</label>
             <input
+              id="add-item-image"
+              name="image_url"
               type="url"
               value={formData.image_url}
               onChange={(e) => setFormData({...formData, image_url: e.target.value})}
               placeholder="https://example.com/image.jpg"
+              autoComplete="url"
             />
           </div>
           
           <div className="form-group">
             <label className="checkbox-label">
               <input
+                id="add-item-available"
+                name="is_available"
                 type="checkbox"
                 checked={formData.is_available}
                 onChange={(e) => setFormData({...formData, is_available: e.target.checked})}
@@ -178,7 +194,7 @@ function EditItemModal({ item, counters, onSave, onClose }) {
     name: item.name,
     description: item.description,
     price: item.price,
-    counter_id: item.counter.id,
+    counter_id: item.counter?.id || item.counter_id,
     stock: item.stock,
     image_url: item.image_url || '',
     is_available: item.is_available
@@ -199,52 +215,67 @@ function EditItemModal({ item, counters, onSave, onClose }) {
         
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
-            <label>Item Name *</label>
+            <label htmlFor="edit-item-name">Item Name *</label>
             <input
+              id="edit-item-name"
+              name="name"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
+              autoComplete="off"
               required
             />
           </div>
           
           <div className="form-group">
-            <label>Description *</label>
+            <label htmlFor="edit-item-description">Description *</label>
             <textarea
+              id="edit-item-description"
+              name="description"
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
+              autoComplete="off"
               required
             />
           </div>
           
           <div className="form-row">
             <div className="form-group">
-              <label>Price (₹) *</label>
+              <label htmlFor="edit-item-price">Price (₹) *</label>
               <input
+                id="edit-item-price"
+                name="price"
                 type="number"
                 step="0.01"
                 value={formData.price}
                 onChange={(e) => setFormData({...formData, price: e.target.value})}
+                autoComplete="off"
                 required
               />
             </div>
             
             <div className="form-group">
-              <label>Stock *</label>
+              <label htmlFor="edit-item-stock">Stock *</label>
               <input
+                id="edit-item-stock"
+                name="stock"
                 type="number"
                 value={formData.stock}
                 onChange={(e) => setFormData({...formData, stock: e.target.value})}
+                autoComplete="off"
                 required
               />
             </div>
           </div>
           
           <div className="form-group">
-            <label>Counter *</label>
+            <label htmlFor="edit-item-counter">Counter *</label>
             <select
+              id="edit-item-counter"
+              name="counter_id"
               value={formData.counter_id}
               onChange={(e) => setFormData({...formData, counter_id: e.target.value})}
+              autoComplete="off"
               required
             >
               {counters.map(counter => (
@@ -256,18 +287,23 @@ function EditItemModal({ item, counters, onSave, onClose }) {
           </div>
           
           <div className="form-group">
-            <label>Image URL (optional)</label>
+            <label htmlFor="edit-item-image">Image URL (optional)</label>
             <input
+              id="edit-item-image"
+              name="image_url"
               type="url"
               value={formData.image_url}
               onChange={(e) => setFormData({...formData, image_url: e.target.value})}
               placeholder="https://example.com/image.jpg"
+              autoComplete="url"
             />
           </div>
           
           <div className="form-group">
             <label className="checkbox-label">
               <input
+                id="edit-item-available"
+                name="is_available"
                 type="checkbox"
                 checked={formData.is_available}
                 onChange={(e) => setFormData({...formData, is_available: e.target.checked})}
@@ -319,21 +355,26 @@ function StaffDashboard() {
 
   // Fetch items data
   const fetchItems = async () => {
-    console.log('🚀 fetchItems called!');
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      console.log('🔑 Token found:', token ? `${token.substring(0, 10)}...` : 'No token');
+      const userType = localStorage.getItem('userType');
+      
+      if (!token) {
+        console.error('❌ No authentication token found');
+        showError('Please log in again');
+        return;
+      }
       
       // Fetch both items and counters in parallel
       const [itemsResponse, countersResponse] = await Promise.all([
-        fetch('http://localhost:8000/api/menu/staff/items/', {
+        fetch('http://127.0.0.1:8000/api/menu/staff/items/', {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
           },
         }),
-        fetch('http://localhost:8000/api/menu/counters/', {
+        fetch('http://127.0.0.1:8000/api/menu/counters/', {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -345,15 +386,10 @@ function StaffDashboard() {
         const itemsData = await itemsResponse.json();
         const countersData = await countersResponse.json();
         
-        console.log('🔍 API Response - Items:', itemsData);
-        console.log('🔍 API Response - Counters:', countersData);
-        
         // Ensure itemsData is an array
         if (Array.isArray(itemsData)) {
-          console.log('✅ Setting items directly (array):', itemsData.length);
           setItems(itemsData);
         } else if (itemsData && Array.isArray(itemsData.items)) {
-          console.log('✅ Setting items from nested structure:', itemsData.items.length);
           setItems(itemsData.items);
         } else {
           console.warn('❌ Items data is not an array:', itemsData);
@@ -368,14 +404,11 @@ function StaffDashboard() {
           setCounters([]);
         }
       } else {
-        console.error('❌ API Error - Items Response:', itemsResponse.status, itemsResponse.statusText);
-        console.error('❌ API Error - Counters Response:', countersResponse.status, countersResponse.statusText);
-        showError('Failed to load data');
+        showError(`Failed to load data: Items(${itemsResponse.status}), Counters(${countersResponse.status})`);
         setItems([]);
         setCounters([]);
       }
     } catch (error) {
-      console.error('💥 FETCH ERROR:', error);
       showError('Error loading data');
       console.error('Data fetch error:', error);
       setItems([]);
@@ -390,7 +423,7 @@ function StaffDashboard() {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:8000/api/menu/staff/items/create/', {
+      const response = await fetch('http://127.0.0.1:8000/api/menu/staff/items/create/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -474,10 +507,19 @@ function StaffDashboard() {
 
   // Filter items based on search and counter
   const filteredItems = Array.isArray(items) ? items.filter(item => {
-    if (!item || !item.name || !item.description || !item.counter) return false;
+    if (!item || !item.name || !item.description) {
+      return false;
+    }
+    
+    // Handle both old format (counter object) and new format (counter_id/counter_name)
+    const counterId = item.counter?.id || item.counter_id;
+    if (!counterId) {
+      return false;
+    }
+    
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCounter = filterCounter === 'all' || item.counter.id === parseInt(filterCounter);
+    const matchesCounter = filterCounter === 'all' || counterId === parseInt(filterCounter);
     return matchesSearch && matchesCounter;
   }) : [];
 
@@ -579,6 +621,10 @@ function StaffDashboard() {
           
           {showProfileDropdown && (
             <div className="staff-dropdown-menu">
+              <button onClick={() => setDarkMode(!darkMode)} className="staff-dropdown-item">
+                <span>{darkMode ? '☀️' : '🌙'}</span>
+                {darkMode ? 'Light Mode' : 'Dark Mode'}
+              </button>
               <button onClick={handleLogout} className="staff-dropdown-item logout">
                 <span>🚪</span>
                 Logout
@@ -593,42 +639,18 @@ function StaffDashboard() {
         {/* Header */}
         <header className="staff-content-header">
           <div className="staff-header-left">
-            {activeView === 'items' && (
-              <>
-                <img src={menuIcon} alt="Menu" className="header-icon-img" />
-                <div className="staff-header-text">
-                  <h1 className="staff-page-title">Menu Items</h1>
-                  <p className="staff-page-subtitle">Manage your restaurant menu items</p>
-                </div>
-              </>
-            )}
-            {activeView === 'orders' && (
-              <>
-                <img src={orderManagementIcon} alt="Order Management" className="header-icon-img order-management-header-icon" />
-                <div className="staff-header-text">
-                  <h1 className="staff-page-title">Order Management</h1>
-                  <p className="staff-page-subtitle">Track and manage customer orders</p>
-                </div>
-              </>
-            )}
-            {activeView === 'analytics' && (
-              <>
-                <img src={analyticsIcon} alt="Analytics Dashboard" className="header-icon-img" />
-                <div className="staff-header-text">
-                  <h1 className="staff-page-title">Analytics Dashboard</h1>
-                  <p className="staff-page-subtitle">View performance insights</p>
-                </div>
-              </>
-            )}
+            <h1 className="staff-page-title">
+              {activeView === 'items' && '🍽️ Menu Items'}
+              {activeView === 'orders' && '📋 Order Management'}
+              {activeView === 'analytics' && '📊 Analytics Dashboard'}
+            </h1>
+            <p className="staff-page-subtitle">
+              {activeView === 'items' && 'Manage your restaurant menu items'}
+              {activeView === 'orders' && 'Track and manage customer orders'}
+              {activeView === 'analytics' && 'View performance insights'}
+            </p>
           </div>
           <div className="staff-header-actions">
-            <button 
-              className="staff-theme-toggle-btn"
-              onClick={() => setDarkMode(!darkMode)}
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
             {activeView === 'items' && (
               <button 
                 className="staff-primary-btn"
@@ -653,16 +675,22 @@ function StaffDashboard() {
                     <path d="m21 21-4.35-4.35"/>
                   </svg>
                   <input
+                    id="staff-search-items"
+                    name="search"
                     type="text"
                     placeholder="Search items..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
                 <select 
+                  id="staff-filter-counter"
+                  name="filter_counter"
                   value={filterCounter} 
                   onChange={(e) => setFilterCounter(e.target.value)}
                   className="staff-filter-select"
+                  autoComplete="off"
                 >
                   <option value="all">All Counters</option>
                   {counters.map(counter => (
@@ -690,7 +718,7 @@ function StaffDashboard() {
                     ))
                   ) : (
                     <div className="staff-empty-state">
-                      <img src={foodIcon} alt="No items" className="empty-state-icon" />
+                      <div className="empty-icon">🍽️</div>
                       <h3>No items found</h3>
                       <p>Create your first menu item to get started</p>
                       <button 
@@ -709,9 +737,7 @@ function StaffDashboard() {
           {activeView === 'orders' && (
             <div className="staff-orders-content">
               <div className="staff-coming-soon">
-                <div className="coming-soon-icon">
-                  <img src={orderManagementIcon} alt="Order Management" className="coming-soon-icon-img" />
-                </div>
+                <div className="coming-soon-icon">📋</div>
                 <h3>Order Management</h3>
                 <p>Coming soon! This feature will allow you to manage customer orders.</p>
               </div>
@@ -721,9 +747,7 @@ function StaffDashboard() {
           {activeView === 'analytics' && (
             <div className="staff-analytics-content">
               <div className="staff-coming-soon">
-                <div className="coming-soon-icon">
-                  <img src={analyticsIcon} alt="Analytics Dashboard" className="coming-soon-icon-img" />
-                </div>
+                <div className="coming-soon-icon">📊</div>
                 <h3>Analytics Dashboard</h3>
                 <p>Coming soon! View detailed analytics and insights here.</p>
               </div>
