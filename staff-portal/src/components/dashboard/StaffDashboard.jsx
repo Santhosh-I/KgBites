@@ -624,6 +624,13 @@ function StaffDashboard() {
             )}
           </div>
           <div className="staff-header-actions">
+            <button 
+              className="staff-theme-toggle-btn"
+              onClick={() => setDarkMode(!darkMode)}
+              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
             {activeView === 'items' && (
               <button 
                 className="staff-primary-btn"
