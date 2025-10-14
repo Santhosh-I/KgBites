@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/ToastProvider';
 import './StaffDashboard.css';
+import menuIcon from '../../assets/menu.png';
 
 // Item Card Component
 function ItemCard({ item, onEdit, onDelete }) {
@@ -593,16 +594,33 @@ function StaffDashboard() {
         {/* Header */}
         <header className="staff-content-header">
           <div className="staff-header-left">
-            <h1 className="staff-page-title">
-              {activeView === 'items' && '🍽️ Menu Items'}
-              {activeView === 'orders' && '📋 Order Management'}
-              {activeView === 'analytics' && '📊 Analytics Dashboard'}
-            </h1>
-            <p className="staff-page-subtitle">
-              {activeView === 'items' && 'Manage your restaurant menu items'}
-              {activeView === 'orders' && 'Track and manage customer orders'}
-              {activeView === 'analytics' && 'View performance insights'}
-            </p>
+            {activeView === 'items' && (
+              <>
+                <img src={menuIcon} alt="Menu" className="header-icon-img" />
+                <div className="staff-header-text">
+                  <h1 className="staff-page-title">Menu Items</h1>
+                  <p className="staff-page-subtitle">Manage your restaurant menu items</p>
+                </div>
+              </>
+            )}
+            {activeView === 'orders' && (
+              <>
+                <span className="header-emoji">📋</span>
+                <div className="staff-header-text">
+                  <h1 className="staff-page-title">Order Management</h1>
+                  <p className="staff-page-subtitle">Track and manage customer orders</p>
+                </div>
+              </>
+            )}
+            {activeView === 'analytics' && (
+              <>
+                <span className="header-emoji">📊</span>
+                <div className="staff-header-text">
+                  <h1 className="staff-page-title">Analytics Dashboard</h1>
+                  <p className="staff-page-subtitle">View performance insights</p>
+                </div>
+              </>
+            )}
           </div>
           <div className="staff-header-actions">
             {activeView === 'items' && (
