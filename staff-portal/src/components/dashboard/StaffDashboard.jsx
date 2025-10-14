@@ -315,9 +315,11 @@ function StaffDashboard() {
 
   // Fetch items data
   const fetchItems = async () => {
+    console.log('🚀 fetchItems called!');
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      console.log('🔑 Token found:', token ? `${token.substring(0, 10)}...` : 'No token');
       
       // Fetch both items and counters in parallel
       const [itemsResponse, countersResponse] = await Promise.all([
@@ -369,6 +371,7 @@ function StaffDashboard() {
         setCounters([]);
       }
     } catch (error) {
+      console.error('💥 FETCH ERROR:', error);
       showError('Error loading data');
       console.error('Data fetch error:', error);
       setItems([]);
