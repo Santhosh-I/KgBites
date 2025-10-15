@@ -26,8 +26,9 @@ admin.site.register(User, UserAdmin)
 class CanteenStaffAdmin(admin.ModelAdmin):
     # --- START OF CHANGES ---
     
-    list_display = ('image_tag', 'user', 'full_name', 'id_number', 'gender')
+    list_display = ('image_tag', 'user', 'full_name', 'id_number', 'gender', 'counter')
     search_fields = ('full_name', 'id_number', 'user__username')
+    list_filter = ('counter', 'gender')
 
     # Method to display the image in the admin list view
     def image_tag(self, obj):

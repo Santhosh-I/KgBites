@@ -12,6 +12,11 @@ class CanteenStaff(models.Model):
     class Gender(models.TextChoices):
         MALE = 'M', 'Male'
         FEMALE = 'F', 'Female'
+    
+    class Counter(models.TextChoices):
+        VEG_MEALS = 'VEG_MEALS', 'Veg & Meals'
+        BIRIYANI_CHINESE = 'BIRIYANI_CHINESE', 'Biriyani & Chinese'
+        SNACKS = 'SNACKS', 'Snacks'
 
     # This links the profile to a user account. If a User is deleted,
     # their CanteenStaff profile is also deleted.
@@ -21,6 +26,12 @@ class CanteenStaff(models.Model):
     full_name = models.CharField(max_length=255)
     gender = models.CharField(max_length=1, choices=Gender.choices)
     id_number = models.CharField(max_length=100, unique=True, help_text="Unique ID number for the staff member.")
+    counter = models.CharField(
+        max_length=20, 
+        choices=Counter.choices,
+        default=Counter.VEG_MEALS,
+        help_text="Counter assigned to the staff member."
+    )
     avatar = models.ImageField(
         upload_to='avatars/staff/', 
         null=True, 

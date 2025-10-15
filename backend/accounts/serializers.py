@@ -47,7 +47,7 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CanteenStaff
-        fields = ['user', 'full_name', 'gender', 'id_number', 'avatar']
+        fields = ['user', 'full_name', 'gender', 'id_number', 'counter', 'avatar']
     
     def validate_id_number(self, value):
         if CanteenStaff.objects.filter(id_number=value).exists():
@@ -96,4 +96,4 @@ class StaffSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CanteenStaff
-        fields = ['id', 'username', 'email', 'full_name', 'gender', 'id_number', 'avatar']
+        fields = ['id', 'username', 'email', 'full_name', 'gender', 'id_number', 'counter', 'avatar']
