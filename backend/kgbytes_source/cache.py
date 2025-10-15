@@ -100,26 +100,27 @@ class CacheManager:
     @staticmethod
     def invalidate_menu_cache():
         """Invalidate all menu-related cache entries"""
-        cache_patterns = [
-            "menu_data_*",
-            "popular_items_*",
-            "counter_list_*",
-            "food_items_*"
+        # Clear specific known cache keys for menu data
+        # This works with LocMemCache backend
+        cache_keys = [
+            'menu_data_public',
+            # Clear for all potential user IDs (simple approach)
+            # In production with Redis, use pattern deletion
         ]
-        # Note: In production, use Redis pattern deletion
-        # For development, we'll use individual key deletion
-        for pattern in cache_patterns:
-            cache.delete_many(cache.keys(pattern))
+        
+        # Clear public menu data
+        for key in cache_keys:
+            cache.delete(key)
+        
+        # Clear cache for authenticated users by clearing all
+        # (LocMemCache doesn't support pattern deletion)
+        cache.clear()
     
     @staticmethod
     def invalidate_analytics_cache():
         """Invalidate analytics cache entries"""
-        cache_patterns = [
-            "analytics_*",
-            "order_stats_*"
-        ]
-        for pattern in cache_patterns:
-            cache.delete_many(cache.keys(pattern))
+        # For LocMemCache, clear all cache
+        cache.clear()
     
     @staticmethod
     def warm_cache():

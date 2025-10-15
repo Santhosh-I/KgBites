@@ -22,6 +22,7 @@ from .models import Counter, FoodItem
 from .serializers import CounterSerializer, FoodItemSerializer, MenuDataSerializer
 from accounts.models import CanteenStaff
 from kgbytes_source.pagination import StandardPagination, LargePagination
+from kgbytes_source.cache import CacheManager
 
 
 @api_view(['GET'])
@@ -358,6 +359,9 @@ def staff_create_item(request):
             image_url=image_url
         )
         
+        # Clear all menu data caches to ensure new item appears immediately
+        CacheManager.invalidate_menu_cache()
+        
         return Response({
             'message': 'Item created successfully',
             'item': FoodItemSerializer(food_item, context={'request': request}).data
@@ -419,6 +423,9 @@ def staff_update_item(request, item_id):
         
         food_item.save()
         
+        # Clear all menu data caches to ensure updated item appears immediately
+        CacheManager.invalidate_menu_cache()
+        
         return Response({
             'message': 'Item updated successfully',
             'item': FoodItemSerializer(food_item, context={'request': request}).data
@@ -450,6 +457,9 @@ def staff_delete_item(request, item_id):
         food_item = get_object_or_404(FoodItem, id=item_id)
         item_name = food_item.name
         food_item.delete()
+        
+        # Clear all menu data caches to ensure deleted item is removed immediately
+        CacheManager.invalidate_menu_cache()
         
         return Response({
             'message': f'Item "{item_name}" deleted successfully'
@@ -484,6 +494,9 @@ def staff_create_counter(request):
             name=data['name'],
             description=data.get('description', '')
         )
+        
+        # Clear menu cache when new counter is added
+        CacheManager.invalidate_menu_cache()
         
         return Response({
             'message': 'Counter created successfully',
