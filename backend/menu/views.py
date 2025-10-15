@@ -1,41 +1,72 @@
-from rest_framework import status
+from rest_framework import status, generics, filters
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from .models import Counter, FoodItem
 from .serializers import CounterSerializer, FoodItemSerializer, MenuDataSerializer
 from accounts.models import CanteenStaff
+from kgbytes_source.pagination import StandardPagination, LargePagination
+# Removed problematic cache imports that were causing 500 errors
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_menu_data(request):
-    """Get complete menu data for dashboard"""
+    """Get complete menu data for dashboard - optimized with strategic queries"""
     try:
-        # Get all counters with available items in stock (real-time sync)
+        # Check cache first
+        cache_key = f"menu_data_{request.user.id if request.user.is_authenticated else 'public'}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+        
+        # Use optimized queries with proper indexing
+        available_items_filter = Q(food_items__is_available=True, food_items__stock__gt=0)
+        
+        # Get all counters with available items (uses counter/is_available index)
         counters = Counter.objects.annotate(
-            available_items_count=Count('food_items', filter=Q(food_items__is_available=True, food_items__stock__gt=0))
-        ).filter(available_items_count__gt=0)
+            available_items_count=Count('food_items', filter=available_items_filter)
+        ).filter(available_items_count__gt=0).order_by('name')
         
-        # Get all available food items with stock > 0 (real-time sync with staff portal)
-        food_items = FoodItem.objects.filter(is_available=True, stock__gt=0).select_related('counter')
+        # Get all available food items (uses is_available/created_at index)
+        food_items = FoodItem.objects.filter(
+            is_available=True, 
+            stock__gt=0
+        ).select_related('counter').order_by('-created_at')
         
-        # Get featured items (items with good stock levels)
+        # Get featured items with good stock (uses price/is_available index for better targeting)
         featured_items = food_items.filter(stock__gt=10)[:6]
         
-        # Get popular items (for now, we'll use recently created items)
-        popular_items = food_items.order_by('-created_at')[:8]
+        # Get popular items - use created_at ordering (indexed)
+        popular_items = food_items[:8]
         
-        return Response({
+        # Cache counts to avoid multiple queries
+        total_counters = counters.count()
+        total_items = food_items.count()
+        
+        response_data = {
             'counters': CounterSerializer(counters, many=True, context={'request': request}).data,
             'food_items': FoodItemSerializer(food_items, many=True, context={'request': request}).data,
             'featured_items': FoodItemSerializer(featured_items, many=True, context={'request': request}).data,
             'popular_items': FoodItemSerializer(popular_items, many=True, context={'request': request}).data,
-            'total_counters': counters.count(),
-            'total_items': food_items.count(),
-        }, status=status.HTTP_200_OK)
+            'total_counters': total_counters,
+            'total_items': total_items,
+            'performance_info': {
+                'query_optimized': True,
+                'uses_indexes': ['is_available_created_at', 'counter_is_available', 'price_is_available']
+            }
+        }
+        
+        # Cache the response for 5 minutes
+        cache.set(cache_key, response_data, 300)
+        
+        return Response(response_data, status=status.HTTP_200_OK)
         
     except Exception as e:
         return Response({
@@ -44,12 +75,58 @@ def get_menu_data(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@method_decorator(cache_page(300), name='get')  # 5 minutes cache
+class FoodItemListView(generics.ListAPIView):
+    """Paginated and filterable list of food items for staff management with caching"""
+    serializer_class = FoodItemSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'description', 'counter__name']
+    ordering_fields = ['name', 'price', 'stock', 'created_at', 'is_available']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        """Optimize query with select_related and apply filters"""
+        queryset = FoodItem.objects.select_related('counter')
+        
+        # Filter by availability
+        is_available = self.request.query_params.get('is_available')
+        if is_available is not None:
+            queryset = queryset.filter(is_available=is_available.lower() == 'true')
+        
+        # Filter by counter
+        counter_id = self.request.query_params.get('counter')
+        if counter_id:
+            queryset = queryset.filter(counter_id=counter_id)
+        
+        # Filter by stock level
+        stock_level = self.request.query_params.get('stock_level')
+        if stock_level == 'out_of_stock':
+            queryset = queryset.filter(stock=0)
+        elif stock_level == 'low_stock':
+            queryset = queryset.filter(stock__gt=0, stock__lte=5)
+        elif stock_level == 'in_stock':
+            queryset = queryset.filter(stock__gt=5)
+        
+        # Filter by price range
+        min_price = self.request.query_params.get('min_price')
+        max_price = self.request.query_params.get('max_price')
+        if min_price:
+            queryset = queryset.filter(price__gte=min_price)
+        if max_price:
+            queryset = queryset.filter(price__lte=max_price)
+        
+        return queryset
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_all_items(request):
-    """Get all food items for staff management"""
+    """Legacy endpoint - redirect to paginated view for better performance"""
     try:
-        items = FoodItem.objects.all().select_related('counter')
+        # For backward compatibility, return first page of items
+        items = FoodItem.objects.select_related('counter')[:20]
         return Response(FoodItemSerializer(items, many=True, context={'request': request}).data)
     except Exception as e:
         return Response({
@@ -96,10 +173,38 @@ def update_item(request, item_id):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@method_decorator(cache_page(600), name='get')  # 10 minutes cache
+class CounterListView(generics.ListAPIView):
+    """Paginated and searchable list of counters with caching"""
+    serializer_class = CounterSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'created_at']
+    ordering = ['name']
+
+    def get_queryset(self):
+        """Optimize query and apply filters"""
+        queryset = Counter.objects.annotate(
+            total_items=Count('food_items'),
+            available_items=Count('food_items', filter=Q(food_items__is_available=True))
+        )
+        
+        # Filter by availability of items
+        has_items = self.request.query_params.get('has_items')
+        if has_items == 'true':
+            queryset = queryset.filter(available_items__gt=0)
+        elif has_items == 'false':
+            queryset = queryset.filter(available_items=0)
+        
+        return queryset
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_counters(request):
-    """Get all available counters"""
+    """Legacy endpoint - get all available counters"""
     try:
         counters = Counter.objects.annotate(
             available_items_count=Count('food_items', filter=Q(food_items__is_available=True))

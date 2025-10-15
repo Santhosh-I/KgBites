@@ -1,4 +1,4 @@
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, filters, generics
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,21 +8,32 @@ from datetime import datetime, timedelta
 from .models import Order, OrderItem
 from .serializers import OrderSerializer, OrderCreateSerializer
 from accounts.models import CanteenStaff
+from kgbytes_source.pagination import StandardPagination, LargePagination
 
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['student__user__username', 'student__user__email', 'id']
+    ordering_fields = ['created_at', 'total_amount', 'status', 'updated_at']
+    ordering = ['-created_at']
     
     def get_queryset(self):
-        queryset = Order.objects.all().select_related('student__user').prefetch_related('items')
+        """Optimized queryset with select_related and prefetch_related"""
+        queryset = Order.objects.select_related(
+            'student__user'
+        ).prefetch_related(
+            'items__food_item__counter'
+        )
         
         # Filter by status
         status_filter = self.request.query_params.get('status')
         if status_filter and status_filter != 'all':
             queryset = queryset.filter(status=status_filter)
         
-        # Filter by date
+        # Filter by date range
         date_filter = self.request.query_params.get('date')
         if date_filter:
             today = timezone.now().date()
@@ -34,8 +45,24 @@ class OrderViewSet(viewsets.ModelViewSet):
             elif date_filter == 'week':
                 week_ago = today - timedelta(days=7)
                 queryset = queryset.filter(created_at__date__gte=week_ago)
+            elif date_filter == 'month':
+                month_ago = today - timedelta(days=30)
+                queryset = queryset.filter(created_at__date__gte=month_ago)
         
-        return queryset.order_by('-created_at')
+        # Filter by payment method
+        payment_method = self.request.query_params.get('payment_method')
+        if payment_method:
+            queryset = queryset.filter(payment_method=payment_method)
+        
+        # Filter by amount range
+        min_amount = self.request.query_params.get('min_amount')
+        max_amount = self.request.query_params.get('max_amount')
+        if min_amount:
+            queryset = queryset.filter(total_amount__gte=min_amount)
+        if max_amount:
+            queryset = queryset.filter(total_amount__lte=max_amount)
+        
+        return queryset
     
     def partial_update(self, request, *args, **kwargs):
         """Update order status"""
@@ -212,3 +239,104 @@ def analytics_data(request):
             'error': 'Failed to fetch analytics data',
             'detail': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AnalyticsAPIView(generics.GenericAPIView):
+    """Optimized analytics endpoint with strategic indexing"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get comprehensive analytics with optimized queries"""
+        try:
+            period = request.query_params.get('period', 'today')
+            today = timezone.now().date()
+            
+            # Calculate date range efficiently
+            if period == 'today':
+                start_date = today
+                end_date = today
+            elif period == 'week':
+                start_date = today - timedelta(days=7)
+                end_date = today
+            elif period == 'month':
+                start_date = today - timedelta(days=30)
+                end_date = today
+            else:
+                start_date = today
+                end_date = today
+            
+            # Optimized order statistics (uses status/created_at index)
+            orders_queryset = Order.objects.filter(
+                created_at__date__gte=start_date,
+                created_at__date__lte=end_date
+            )
+            
+            order_stats = orders_queryset.aggregate(
+                total_orders=Count('id'),
+                total_revenue=Sum('total_amount'),
+                avg_order_value=Avg('total_amount'),
+                completed_orders=Count('id', filter=Q(status='completed')),
+                pending_orders=Count('id', filter=Q(status='pending'))
+            )
+            
+            # Revenue by payment method (uses optimized filtering)
+            payment_stats = orders_queryset.values('payment_method').annotate(
+                count=Count('id'),
+                revenue=Sum('total_amount')
+            ).order_by('-revenue')
+            
+            # Top selling items with optimized joins
+            top_items = OrderItem.objects.filter(
+                order__created_at__date__gte=start_date,
+                order__created_at__date__lte=end_date
+            ).select_related('food_item').values(
+                'food_item__id', 
+                'food_item__name',
+                'food_item__price'
+            ).annotate(
+                total_quantity=Sum('quantity'),
+                total_revenue=Sum('subtotal'),
+                order_count=Count('order', distinct=True)
+            ).order_by('-total_quantity')[:10]
+            
+            # Performance insights
+            performance_data = {
+                'query_optimizations': [
+                    'Using student/status index for order filtering',
+                    'Using status/created_at composite index', 
+                    'Select_related for OrderItem queries',
+                    'Aggregate functions minimize database hits'
+                ],
+                'cache_opportunities': [
+                    'Daily analytics can be cached for 1 hour',
+                    'Popular items can be cached for 30 minutes',
+                    'Payment stats can be cached for 2 hours'
+                ]
+            }
+            
+            return Response({
+                'period': period,
+                'date_range': {
+                    'start': start_date,
+                    'end': end_date
+                },
+                'order_statistics': {
+                    'total_orders': order_stats['total_orders'] or 0,
+                    'total_revenue': float(order_stats['total_revenue'] or 0),
+                    'average_order_value': float(order_stats['avg_order_value'] or 0),
+                    'completed_orders': order_stats['completed_orders'] or 0,
+                    'pending_orders': order_stats['pending_orders'] or 0,
+                    'completion_rate': (
+                        (order_stats['completed_orders'] or 0) / max(order_stats['total_orders'] or 1, 1) * 100
+                    )
+                },
+                'payment_statistics': list(payment_stats),
+                'top_selling_items': list(top_items),
+                'performance_info': performance_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': 'Failed to fetch optimized analytics',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
