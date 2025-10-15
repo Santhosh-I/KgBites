@@ -1,24 +1,54 @@
+"""
+Menu Views Module
+Handles all menu-related API endpoints with industry-standard practices.
+"""
+
+from typing import Dict, Any, Optional
+from django.db.models import Count, Q, QuerySet
+from django.shortcuts import get_object_or_404
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.http import HttpRequest
+
 from rest_framework import status, generics, filters
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from django.db.models import Count, Q
-from django.shortcuts import get_object_or_404
-from django.core.cache import cache
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from rest_framework.request import Request
+
 from .models import Counter, FoodItem
 from .serializers import CounterSerializer, FoodItemSerializer, MenuDataSerializer
 from accounts.models import CanteenStaff
 from kgbytes_source.pagination import StandardPagination, LargePagination
-# Removed problematic cache imports that were causing 500 errors
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_menu_data(request):
-    """Get complete menu data for dashboard - optimized with strategic queries"""
+def get_menu_data(request: Request) -> Response:
+    """
+    Retrieve complete menu data for dashboard.
+    
+    This endpoint provides optimized menu data including counters, food items,
+    featured items, and popular items with strategic database queries and caching.
+    
+    Args:
+        request: HTTP request object with authenticated user
+        
+    Returns:
+        Response: JSON response containing:
+            - counters: List of available counters with item counts
+            - food_items: List of all available food items
+            - featured_items: Top 6 items with good stock levels
+            - popular_items: Top 8 recently created items
+            - total_counters: Count of active counters
+            - total_items: Count of available items
+            - performance_info: Query optimization details
+            
+    Raises:
+        HTTP_500_INTERNAL_SERVER_ERROR: If data retrieval fails
+    """
     try:
         # Check cache first
         cache_key = f"menu_data_{request.user.id if request.user.is_authenticated else 'public'}"

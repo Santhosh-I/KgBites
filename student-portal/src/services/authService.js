@@ -23,50 +23,63 @@ export const authAPI = {
     // Clear any existing auth data before registration
     clearAuthData();
     
-    const response = await fetch(`${API_BASE_URL}/accounts/auth/student/register/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        user: {
-          username: userData.email, // Using email as username
-          email: userData.email,
-          password: userData.password,
-          confirm_password: userData.confirmPassword
+    try {
+      const response = await fetch(`${API_BASE_URL}/accounts/auth/student/register/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        full_name: userData.name,
-        roll_number: userData.rollNumber
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(JSON.stringify(error));
+        body: JSON.stringify({
+          user: {
+            username: userData.email, // Using email as username
+            email: userData.email,
+            password: userData.password,
+            confirm_password: userData.confirmPassword
+          },
+          full_name: userData.name,
+          roll_number: userData.rollNumber
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(JSON.stringify(error));
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw new Error('Network error during registration. Please check your connection and try again.');
     }
-    
-    return response.json();
   },
 
   // User login (works for both students and staff)
   login: async (credentials) => {
-    const response = await fetch(`${API_BASE_URL}/accounts/auth/login/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        username: credentials.username || credentials.email,
-        password: credentials.password
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(JSON.stringify(error));
+    try {
+      const response = await fetch(`${API_BASE_URL}/accounts/auth/login/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: credentials.username || credentials.email,
+          password: credentials.password
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(JSON.stringify(error));
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Login failed:', error);
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('Cannot connect to server. Please check if the backend is running on http://127.0.0.1:8000');
+      }
+      throw error;
     }
-    
-    return response.json();
   },
 
   // User logout

@@ -4,6 +4,8 @@ import Dashboard from './components/dashboard/Dashboard'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import { ToastProvider } from './components/common/ToastProvider'
+import ErrorBoundary from './components/common/ErrorBoundary'
+import './components/common/ErrorBoundary.css'
 import './App.css'
 
 // App loading styles
@@ -67,11 +69,13 @@ const AppContent = () => {
 function App() {
   return (
     <div className="App">
-      <ToastProvider>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </ToastProvider>
+      <ErrorBoundary>
+        <ToastProvider>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </ToastProvider>
+      </ErrorBoundary>
     </div>
   )
 }

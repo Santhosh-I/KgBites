@@ -1,5 +1,16 @@
+"""
+Orders Models Module
+Defines database models for order management with industry-standard practices.
+"""
+
+from typing import Optional
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
 from accounts.models import Student
 from menu.models import FoodItem
 
