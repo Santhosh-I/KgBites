@@ -13,6 +13,58 @@ from django.utils import timezone
 
 from accounts.models import Student
 from menu.models import FoodItem
+from django.contrib.postgres.fields import ArrayField
+from django.db.models import JSONField
+
+
+class OrderOTP(models.Model):
+    """Server-side OTP order token that carries the order payload for cross-portal sync.
+    This mirrors the cab booking OTP pattern: student creates, staff validates & consumes.
+    """
+
+    OTP_STATUS = [
+        ('active', 'Active'),
+        ('used', 'Used'),
+        ('expired', 'Expired'),
+    ]
+
+    code = models.CharField(max_length=8, unique=True, db_index=True)
+    status = models.CharField(max_length=10, choices=OTP_STATUS, default='active', db_index=True)
+    payload = JSONField(default=dict)  # Stores order details: items_by_counter, totals, student info, etc.
+
+    # Audit / lifecycle fields
+    generated_by = models.CharField(max_length=255, blank=True, null=True)
+    expires_at = models.DateTimeField(db_index=True)
+    used_at = models.DateTimeField(blank=True, null=True, db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['code', 'status']),
+            models.Index(fields=['expires_at', 'status']),
+        ]
+
+    def __str__(self):
+        return f"OTP {self.code} ({self.status})"
+
+    @staticmethod
+    def generate_code() -> str:
+        import random, string
+        letters = string.ascii_uppercase
+        digits = string.digits
+        for _ in range(100):
+            code = ''.join(random.choice(letters) for _ in range(2)) + ''.join(random.choice(digits) for _ in range(4))
+            if not OrderOTP.objects.filter(code=code).exists():
+                return code
+        # Fallback
+        return 'OR' + str(int(timezone.now().timestamp()))[-4:]
+
+    def mark_used(self):
+        self.status = 'used'
+        self.used_at = timezone.now()
+        self.save(update_fields=['status', 'used_at', 'updated_at'])
 
 
 class Order(models.Model):

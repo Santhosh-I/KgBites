@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/ToastProvider';
 import ImageUpload from '../common/ImageUpload';
+import CounterInterface from '../counter/CounterInterface';
 import './StaffDashboard.css';
 
 // Item Card Component
@@ -641,6 +642,19 @@ function StaffDashboard() {
             <span>Orders</span>
           </button>
           <button 
+            className={`staff-menu-btn ${activeView === 'counter' ? 'active' : ''}`}
+            onClick={() => setActiveView('counter')}
+          >
+            <svg className="staff-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9V7C3 6.44772 3.44772 6 4 6H20C20.5523 6 21 6.44772 21 7V9"/>
+              <path d="M3 9V19C3 19.5523 3.44772 20 4 20H20C20.5523 20 21 19.5523 21 19V9"/>
+              <path d="M9 13H15"/>
+              <circle cx="9" cy="13" r="1"/>
+              <circle cx="15" cy="13" r="1"/>
+            </svg>
+            <span>Counter</span>
+          </button>
+          <button 
             className={`staff-menu-btn ${activeView === 'analytics' ? 'active' : ''}`}
             onClick={() => setActiveView('analytics')}
           >
@@ -687,14 +701,16 @@ function StaffDashboard() {
         {/* Header */}
         <header className="staff-content-header">
           <div className="staff-header-left">
-            <h1 className="staff-page-title">
+            <h1 className="staff-main-title">
               {activeView === 'items' && '🍽️ Menu Items'}
               {activeView === 'orders' && '📋 Order Management'}
+              {activeView === 'counter' && '🏪 Counter Interface'}
               {activeView === 'analytics' && '📊 Analytics Dashboard'}
             </h1>
-            <p className="staff-page-subtitle">
+            <p className="staff-main-subtitle">
               {activeView === 'items' && 'Manage your restaurant menu items'}
               {activeView === 'orders' && 'Track and manage customer orders'}
+              {activeView === 'counter' && 'Process order deliveries at your counter'}
               {activeView === 'analytics' && 'View performance insights'}
             </p>
           </div>
@@ -789,6 +805,12 @@ function StaffDashboard() {
                 <h3>Order Management</h3>
                 <p>Coming soon! This feature will allow you to manage customer orders.</p>
               </div>
+            </div>
+          )}
+
+          {activeView === 'counter' && (
+            <div className="staff-counter-content">
+              <CounterInterface />
             </div>
           )}
 

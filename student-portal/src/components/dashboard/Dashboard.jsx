@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { tokenService } from '../../services/authService';
 import { useToast } from '../common/ToastProvider';
+import orderService from '../../services/orderService';
+import OrdersPage from './OrdersPage';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -22,6 +24,16 @@ function Dashboard() {
     featured_items: [],
     popular_items: []
   });
+  
+  // Order Management States
+  const [orderConfirmed, setOrderConfirmed] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [orderProcessing, setOrderProcessing] = useState(false);
+  
+  // Navigation State
+  const [currentPage, setCurrentPage] = useState('menu'); // menu, orders, history, wallet
+  
   const dropdownRef = useRef(null);
   
   // User Data
@@ -43,7 +55,8 @@ function Dashboard() {
       const token = tokenService.getToken();
       
       if (!token) {
-        showError('Please log in to view menu');
+        console.warn('No token found, using fallback menu data');
+        setMenuData(getFallbackMenuData());
         return;
       }
 
@@ -58,18 +71,111 @@ function Dashboard() {
       if (response.ok) {
         const data = await response.json();
         setMenuData(data);
+        console.log('Menu data loaded successfully');
       } else {
-        const errorData = await response.json();
-        showError('Failed to load menu data');
-        console.error('Menu fetch error:', errorData);
+        console.warn('API response not ok, using fallback data');
+        setMenuData(getFallbackMenuData());
+        showError('Using offline menu data');
       }
     } catch (error) {
-      showError('Network error while loading menu');
-      console.error('Menu fetch error:', error);
+      console.warn('Network error, using fallback menu data:', error);
+      
+      // Check for specific error types
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        console.error('CORS or network connectivity issue');
+        showError('Backend server not accessible - using offline data');
+      } else if (error.name === 'AbortError') {
+        console.error('Request was aborted');
+        showError('Request timeout - using offline data');
+      } else {
+        console.error('Unknown fetch error:', error);
+        showError('Network error - using offline data');
+      }
+      
+      setMenuData(getFallbackMenuData());
     } finally {
       setLoading(false);
     }
   };
+
+  // Fallback menu data when API is unavailable
+  const getFallbackMenuData = () => ({
+    counters: [
+      { id: 1, name: 'Veg & Meals' },
+      { id: 2, name: 'Biriyani & Chinese' },
+      { id: 3, name: 'Snacks' }
+    ],
+    food_items: [
+      {
+        id: 1,
+        name: 'Veg Rice Bowl',
+        description: 'Steamed rice with mixed vegetables',
+        price: 45.00,
+        image: null,
+        counter_name: 'Veg & Meals',
+        counter_id: 1,
+        stock: 50,
+        is_available: true
+      },
+      {
+        id: 2,
+        name: 'Dal Curry',
+        description: 'Traditional lentil curry',
+        price: 25.00,
+        image: null,
+        counter_name: 'Veg & Meals',
+        counter_id: 1,
+        stock: 30,
+        is_available: true
+      },
+      {
+        id: 3,
+        name: 'Chicken Biriyani',
+        description: 'Aromatic basmati rice with chicken',
+        price: 120.00,
+        image: null,
+        counter_name: 'Biriyani & Chinese',
+        counter_id: 2,
+        stock: 20,
+        is_available: true
+      },
+      {
+        id: 4,
+        name: 'Fried Rice',
+        description: 'Stir-fried rice with vegetables',
+        price: 65.00,
+        image: null,
+        counter_name: 'Biriyani & Chinese',
+        counter_id: 2,
+        stock: 25,
+        is_available: true
+      },
+      {
+        id: 5,
+        name: 'Samosa',
+        description: 'Crispy pastry with spiced filling',
+        price: 15.00,
+        image: null,
+        counter_name: 'Snacks',
+        counter_id: 3,
+        stock: 40,
+        is_available: true
+      },
+      {
+        id: 6,
+        name: 'Tea',
+        description: 'Hot masala chai',
+        price: 10.00,
+        image: null,
+        counter_name: 'Snacks',
+        counter_id: 3,
+        stock: 100,
+        is_available: true
+      }
+    ],
+    featured_items: [],
+    popular_items: []
+  });
 
   // Load menu data when component mounts
   useEffect(() => {
@@ -194,6 +300,204 @@ function Dashboard() {
     setShowCart(!showCart);
   };
 
+  // Utility function to generate order code
+  const generateOrderCode = () => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    let result = '';
+    
+    // 2 letters + 4 numbers format (e.g., KB1234)
+    for (let i = 0; i < 2; i++) {
+      result += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    for (let i = 0; i < 4; i++) {
+      result += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+    
+    return result;
+  };
+
+  // Group cart items by counter
+  const groupItemsByCounter = (items) => {
+    return items.reduce((acc, item) => {
+      // Try multiple possible counter field names
+      const counterName = item.counter_name || 
+                          item.counter?.name || 
+                          item.counter || 
+                          'General Counter';
+      
+      if (!acc[counterName]) {
+        acc[counterName] = [];
+      }
+      acc[counterName].push({
+        id: item.id,
+        name: item.name,
+        price: parseFloat(item.price || 0),
+        quantity: item.quantity,
+        total: parseFloat(item.price || 0) * item.quantity,
+        image_url: item.image_display_url || item.image_url
+      });
+      return acc;
+    }, {});
+  };
+
+  // Handle order confirmation
+  const handleConfirmOrder = async () => {
+    if (cartItems.length === 0) {
+      showError('Cart is empty');
+      return;
+    }
+
+    // Debug: Log cart items structure
+    console.log('Cart items for debugging:', cartItems);
+
+    // Validate cart items
+    const invalidItems = cartItems.filter(item => 
+      !item.price || parseFloat(item.price) <= 0 || 
+      !item.quantity || item.quantity <= 0
+    );
+
+    if (invalidItems.length > 0) {
+      console.log('Invalid items found:', invalidItems);
+      showError('Some items in your cart have invalid data. Please refresh and try again.');
+      return;
+    }
+
+    // Check for missing counter names and provide default
+    cartItems.forEach(item => {
+      if (!item.counter_name && !item.counter) {
+        console.warn('Item missing counter info:', item);
+        item.counter_name = 'Unknown Counter';
+      }
+    });
+
+    try {
+      setOrderProcessing(true);
+      
+      // Group items by counter
+      const itemsByCounter = groupItemsByCounter(cartItems);
+      const countersInvolved = Object.keys(itemsByCounter);
+      
+      if (countersInvolved.length === 0) {
+        showError('No valid counters found in cart');
+        return;
+      }
+
+      // Build order payload (sent to server to generate OTP code)
+      let subtotal = 0;
+      cartItems.forEach(item => {
+        subtotal += parseFloat(item.price || 0) * (item.quantity || 0);
+      });
+      const taxAmount = Math.round(subtotal * 0.10 * 100) / 100;
+      const totalAmount = subtotal + taxAmount;
+
+      const payload = {
+        student_name: userData.full_name || userData.name || 'Unknown Student',
+        student_id: userData.id || userData.roll_number || userData.student_id || 'Unknown',
+        student_email: userData.email || '',
+        total_amount: totalAmount,
+        subtotal: subtotal,
+        tax_amount: taxAmount,
+        status: 'confirmed',
+        created_at: new Date().toISOString(),
+        items_by_counter: itemsByCounter,
+        counters_involved: countersInvolved,
+        counters_completed: [],
+        is_complete: false
+      };
+
+      // Create OTP on server (cab-style)
+      const otpRes = await orderService.createOtpOnServer(payload);
+
+      // Map server response to UI object
+      const newOrder = {
+        id: Date.now(),
+        orderCode: otpRes.code,
+        studentName: otpRes.payload?.student_name || 'Student',
+        itemsByCounter: otpRes.payload?.items_by_counter || {},
+        countersInvolved: otpRes.payload?.counters_involved || [],
+        countersCompleted: otpRes.payload?.counters_completed || [],
+        isComplete: otpRes.payload?.is_complete || false,
+        subtotal: otpRes.payload?.subtotal || 0,
+        tax: otpRes.payload?.tax_amount || 0,
+        total: otpRes.payload?.total_amount || 0,
+        createdAt: new Date(otpRes.payload?.created_at || Date.now()),
+        status: otpRes.status || 'active',
+        otp_status: otpRes.status || 'active',
+        expires_at: otpRes.expires_at,
+        generated_by: otpRes.generated_by
+      };
+
+      // Optional: also save locally for student's tracking/debug
+      try {
+        orderService.saveOrder({
+          order_code: newOrder.orderCode,
+          student_name: newOrder.studentName,
+          total_amount: newOrder.total,
+          subtotal: newOrder.subtotal,
+          tax_amount: newOrder.tax,
+          status: 'confirmed',
+          created_at: newOrder.createdAt.toISOString(),
+          items_by_counter: newOrder.itemsByCounter,
+          counters_involved: newOrder.countersInvolved,
+          counters_completed: newOrder.countersCompleted,
+          is_complete: newOrder.isComplete,
+          otp_status: newOrder.otp_status,
+          expires_at: newOrder.expires_at,
+          generated_by: newOrder.generated_by
+        });
+      } catch (e) {
+        console.warn('Failed to save local copy of order (non-blocking):', e);
+      }
+      
+      setCurrentOrder(newOrder);
+      setOrderConfirmed(true);
+      setShowOrderModal(true);
+      setCartItems([]);
+      setShowCart(false);
+      
+      showSuccess(`Order confirmed! Your order code is: ${newOrder.orderCode}`);
+      
+    } catch (error) {
+      const msg = typeof error?.message === 'string' ? error.message : 'Unexpected error occurred. Please try again.';
+      showError(msg);
+      console.error('Order confirmation error:', error);
+    } finally {
+      setOrderProcessing(false);
+    }
+  };
+
+  // Close order modal
+  const closeOrderModal = () => {
+    setShowOrderModal(false);
+  };
+
+  // Navigate to order tracking
+  const goToOrderTracking = () => {
+    setShowOrderModal(false);
+    setCurrentPage('orders');
+    showSuccess('Order saved! You can track it in Orders section.');
+  };
+
+  // Copy order code to clipboard
+  const copyOrderCode = async () => {
+    if (currentOrder?.orderCode) {
+      try {
+        await navigator.clipboard.writeText(currentOrder.orderCode);
+        showSuccess('Order code copied to clipboard!');
+      } catch (error) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = currentOrder.orderCode;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showSuccess('Order code copied to clipboard!');
+      }
+    }
+  };
+
   return (
     <div className={`pos-dashboard ${darkMode ? 'dark' : 'light'} ${!showCart ? 'cart-hidden' : ''}`}>
       {/* Left Sidebar - Desktop Navigation */}
@@ -204,14 +508,20 @@ function Dashboard() {
         </div>
 
         <nav className="sidebar-menu">
-          <button className="menu-btn active">
+          <button 
+            className={`menu-btn ${currentPage === 'menu' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('menu')}
+          >
             <svg className="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
               <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
             <span>Menu</span>
           </button>
-          <button className="menu-btn">
+          <button 
+            className={`menu-btn ${currentPage === 'orders' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('orders')}
+          >
             <svg className="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
@@ -219,14 +529,20 @@ function Dashboard() {
             </svg>
             <span>Orders</span>
           </button>
-          <button className="menu-btn">
+          <button 
+            className={`menu-btn ${currentPage === 'history' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('history')}
+          >
             <svg className="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
             </svg>
             <span>History</span>
           </button>
-          <button className="menu-btn">
+          <button 
+            className={`menu-btn ${currentPage === 'wallet' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('wallet')}
+          >
             <svg className="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
               <line x1="1" y1="10" x2="23" y2="10"/>
@@ -298,11 +614,14 @@ function Dashboard() {
 
       {/* Main Content */}
       <main className="main-content-area">
-        <header className="top-bar">
-          <div>
-            <h2 className="main-title">Choose Dishes</h2>
-            <p className="main-subtitle">{filteredItems.length} items available</p>
-          </div>
+        {/* Menu Page */}
+        {currentPage === 'menu' && (
+          <>
+            <header className="top-bar">
+              <div>
+                <h2 className="main-title">Choose Dishes</h2>
+                <p className="main-subtitle">{filteredItems.length} items available</p>
+              </div>
 
           <div className="top-bar-actions">
             {/* Search */}
@@ -480,6 +799,61 @@ function Dashboard() {
             </div>
           )}
         </div>
+          </>
+        )}
+
+        {/* Orders Page */}
+        {currentPage === 'orders' && (
+          <div className="page-content">
+            <OrdersPage />
+          </div>
+        )}
+
+        {/* History Page */}
+        {currentPage === 'history' && (
+          <div className="page-content">
+            <header className="top-bar">
+              <div>
+                <h2 className="main-title">🕐 Order History</h2>
+                <p className="main-subtitle">Your past orders</p>
+              </div>
+            </header>
+            <div className="coming-soon-page">
+              <div className="coming-soon-icon">🕐</div>
+              <h3>Order History</h3>
+              <p>View your previous orders and reorder favorites. This feature is coming soon!</p>
+              <button 
+                className="btn-primary"
+                onClick={() => setCurrentPage('menu')}
+              >
+                Back to Menu
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Wallet Page */}
+        {currentPage === 'wallet' && (
+          <div className="page-content">
+            <header className="top-bar">
+              <div>
+                <h2 className="main-title">💳 My Wallet</h2>
+                <p className="main-subtitle">Manage your payments</p>
+              </div>
+            </header>
+            <div className="coming-soon-page">
+              <div className="coming-soon-icon">💳</div>
+              <h3>Digital Wallet</h3>
+              <p>Add money, view transactions, and manage payments. This feature is coming soon!</p>
+              <button 
+                className="btn-primary"
+                onClick={() => setCurrentPage('menu')}
+              >
+                Back to Menu
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Right Sidebar - Cart */}
@@ -576,16 +950,141 @@ function Dashboard() {
               </div>
             </div>
 
-            <button className="checkout-btn">
-              <span>Confirm order</span>
-              <svg className="checkout-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
-              </svg>
+            <button 
+              className="checkout-btn" 
+              onClick={handleConfirmOrder}
+              disabled={orderProcessing || cartItems.length === 0}
+            >
+              <span>{orderProcessing ? 'Processing...' : 'Confirm order'}</span>
+              {!orderProcessing && (
+                <svg className="checkout-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/>
+                </svg>
+              )}
             </button>
           </>
         )}
       </aside>
+
+      {/* Order Confirmation Modal */}
+      {showOrderModal && currentOrder && (
+        <div className="modal-overlay">
+          <div className="order-modal">
+            <div className="order-modal-header">
+              <h2>🎉 Order Confirmed!</h2>
+              <button 
+                className="modal-close-btn"
+                onClick={closeOrderModal}
+                disabled={orderProcessing}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="order-code-section">
+              <h3>Your Order Code (OTP)</h3>
+              <div className="order-code-display" onClick={copyOrderCode} title="Click to copy">
+                {currentOrder.orderCode}
+              </div>
+              <p className="order-code-instruction">
+                📱 <strong>Like a cab booking OTP:</strong> Show this code at each counter<br/>
+                ⏰ <strong>Valid for 24 hours</strong> - becomes invalid after use<br/>
+                🔒 <strong>One-time use:</strong> Staff will validate and consume this code<br/>
+                <small>💡 Tap the code above to copy it</small>
+              </p>
+              <div className="otp-status">
+                <span className="otp-active">🟢 OTP Status: ACTIVE</span>
+                <span className="cross-port-info">
+                  🔄 Synchronized across all staff counters
+                </span>
+              </div>
+            </div>
+
+            <div className="order-counters-section">
+              <h4>🏪 Visit These Counters ({(currentOrder.countersInvolved || []).length}):</h4>
+              {Object.entries(currentOrder.itemsByCounter || {}).map(([counterName, items]) => (
+                <div key={counterName} className="counter-section">
+                  <div className="counter-header">
+                    <h5>📋 {counterName}</h5>
+                    <span className="items-count">
+                      {items.length} item{items.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="counter-items">
+                    {(items || []).map((item, index) => (
+                      <div key={`${item.id || index}-${index}`} className="counter-item">
+                        <div className="counter-item-main">
+                          <span className="counter-item-name">🍽️ {item.name || 'Item'} × {item.quantity || 1}</span>
+                        </div>
+                        <span className="counter-item-price">₹{(item.total_price || (item.unit_price || 0) * (item.quantity || 1)).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="order-summary-section">
+              <div className="summary-row">
+                <span>Subtotal</span>
+                <span>₹{currentOrder.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="summary-row">
+                <span>Tax (10%)</span>
+                <span>₹{currentOrder.tax.toFixed(2)}</span>
+              </div>
+              <div className="summary-sep"></div>
+              <div className="summary-row total">
+                <span>💰 Total Amount</span>
+                <span>₹{currentOrder.total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="order-instructions">
+              <div className="instruction-card">
+                <div className="instruction-icon">1️⃣</div>
+                <div className="instruction-text">
+                  <strong>Go to Counter</strong>
+                  <span>Visit each counter listed above</span>
+                </div>
+              </div>
+              <div className="instruction-card">
+                <div className="instruction-icon">2️⃣</div>
+                <div className="instruction-text">
+                  <strong>Show Code</strong>
+                  <span>Present your order code: <code>{currentOrder.orderCode}</code></span>
+                </div>
+              </div>
+              <div className="instruction-card">
+                <div className="instruction-icon">3️⃣</div>
+                <div className="instruction-text">
+                  <strong>Collect Items</strong>
+                  <span>Staff will mark items as delivered</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="order-modal-actions">
+              <button 
+                className="btn-secondary"
+                onClick={closeOrderModal}
+              >
+                Continue Shopping
+              </button>
+              <button 
+                className="btn-primary"
+                onClick={goToOrderTracking}
+              >
+                Track Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cart Overlay for Mobile */}
       {showCart && <div className="cart-overlay" onClick={toggleCart}></div>}

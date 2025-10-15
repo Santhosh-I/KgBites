@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Order, OrderItem
+from .models import Order, OrderItem, OrderOTP
 from menu.serializers import FoodItemSerializer
 
 
@@ -48,3 +48,36 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             )
         
         return order
+
+
+class OrderOTPSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderOTP
+        fields = [
+            'code', 'status', 'payload', 'generated_by',
+            'expires_at', 'used_at', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['status', 'used_at', 'created_at', 'updated_at']
+
+
+class CreateOrderOTPSerializer(serializers.Serializer):
+    payload = serializers.DictField()
+    generated_by = serializers.CharField(required=False, allow_blank=True)
+    ttl_minutes = serializers.IntegerField(required=False, default=24*60)
+
+    def create(self, validated_data):
+        from django.utils import timezone
+        from datetime import timedelta
+        payload = validated_data['payload']
+        generated_by = validated_data.get('generated_by')
+        ttl_minutes = validated_data.get('ttl_minutes', 24*60)
+        expires_at = timezone.now() + timedelta(minutes=ttl_minutes)
+
+        code = OrderOTP.generate_code()
+        otp = OrderOTP.objects.create(
+            code=code,
+            payload=payload,
+            generated_by=generated_by,
+            expires_at=expires_at
+        )
+        return otp

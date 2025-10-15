@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from django.db.models import Count, Sum, Avg, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
-from .models import Order, OrderItem
-from .serializers import OrderSerializer, OrderCreateSerializer
+from .models import Order, OrderItem, OrderOTP
+from .serializers import OrderSerializer, OrderCreateSerializer, OrderOTPSerializer, CreateOrderOTPSerializer
 from accounts.models import CanteenStaff
 from kgbytes_source.pagination import StandardPagination, LargePagination
 
@@ -83,6 +83,93 @@ class OrderViewSet(viewsets.ModelViewSet):
             {'error': 'Invalid status'}, 
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+# ===== OTP-STYLE ORDER ENDPOINTS (CAB-LIKE) =====
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_order_otp(request):
+    """Student portal: create an OTP with order payload (code acts as OTP)."""
+    try:
+        serializer = CreateOrderOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        otp = serializer.save()
+        return Response(OrderOTPSerializer(otp).data, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_order_by_code(request, code: str):
+    """Staff portal: fetch order payload by code if active and not expired."""
+    try:
+        otp = OrderOTP.objects.filter(code=code).first()
+        if not otp:
+            return Response({'error': 'Order code not found'}, status=status.HTTP_404_NOT_FOUND)
+        # Expiry check
+        if otp.expires_at < timezone.now():
+            otp.status = 'expired'
+            otp.save(update_fields=['status', 'updated_at'])
+            return Response({'error': 'Order code expired'}, status=status.HTTP_410_GONE)
+        if otp.status == 'used':
+            return Response({'error': 'Order code already used'}, status=status.HTTP_409_CONFLICT)
+        return Response(OrderOTPSerializer(otp).data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_order_status_by_code(request, code: str):
+    """Student portal: fetch only the OTP status in a 200 response to avoid 4xx noise.
+    Always returns HTTP 200 with a simple status payload: active|used|expired|not_found.
+    """
+    try:
+        otp = OrderOTP.objects.filter(code=code).first()
+        if not otp:
+            return Response({'status': 'not_found'})
+        # Expiry check
+        now = timezone.now()
+        if otp.expires_at < now:
+            # Optionally persist expired status for consistency
+            if otp.status != 'expired':
+                otp.status = 'expired'
+                otp.save(update_fields=['status', 'updated_at'])
+            return Response({
+                'status': 'expired',
+                'expires_at': otp.expires_at,
+                'used_at': otp.used_at
+            })
+        # Active or Used
+        return Response({
+            'status': otp.status,
+            'expires_at': otp.expires_at,
+            'used_at': otp.used_at
+        })
+    except Exception as e:
+        # Even on errors, don't emit 5xx to avoid noisy console; include detail for debugging
+        return Response({'status': 'error', 'detail': str(e)})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def consume_order_code(request, code: str):
+    """Staff portal: mark code as used (consume OTP)."""
+    try:
+        otp = OrderOTP.objects.filter(code=code).first()
+        if not otp:
+            return Response({'error': 'Order code not found'}, status=status.HTTP_404_NOT_FOUND)
+        if otp.expires_at < timezone.now():
+            otp.status = 'expired'
+            otp.save(update_fields=['status', 'updated_at'])
+            return Response({'error': 'Order code expired'}, status=status.HTTP_410_GONE)
+        if otp.status == 'used':
+            return Response({'error': 'Order code already used'}, status=status.HTTP_409_CONFLICT)
+        otp.mark_used()
+        return Response(OrderOTPSerializer(otp).data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])

@@ -914,3 +914,43 @@ body.dark-theme {
 .staff-dropdown-item span {
   margin-right: 8px;
 }
+
+/* ========== COUNTER CONTENT STYLES ========== */
+.staff-counter-content {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Override counter interface styles to match staff portal theme */
+.staff-counter-content .counter-interface {
+  background: transparent;
+  padding: 0;
+  min-height: auto;
+}
+
+.staff-counter-content .counter-container {
+  max-width: none;
+  margin: 0;
+}
+
+/* Ensure counter interface uses staff portal variables */
+.staff-counter-content .counter-interface,
+.staff-counter-content .counter-interface * {
+  --primary-color: var(--accent-primary);
+  --secondary-color: var(--accent-secondary);
+  --bg-primary: var(--bg-primary);
+  --bg-secondary: var(--bg-secondary);
+  --bg-tertiary: var(--bg-tertiary);
+  --text-primary: var(--text-primary);
+  --text-secondary: var(--text-secondary);
+  --border-color: var(--border-color);
+  --success-color: var(--success-color);
+  --danger-color: var(--danger-color);
+  --warning-color: #FF9800;
+  --shadow: var(--shadow);
+  --shadow-hover: var(--shadow-hover);
+  --border-radius: 12px;
+  --transition: all 0.3s ease;
+}
