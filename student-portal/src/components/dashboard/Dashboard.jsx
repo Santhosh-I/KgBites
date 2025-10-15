@@ -108,24 +108,68 @@ function Dashboard() {
   // Cart Functions
   const addToCart = (item) => {
     const existingItem = cartItems.find(cartItem => cartItem.id === item.id);
+    
+    // Check if item has stock available
+    if (!item.stock || item.stock <= 0) {
+      showError(`${item.name} is currently out of stock`);
+      return;
+    }
+    
     if (existingItem) {
+      // Check if adding one more would exceed available stock
+      if (existingItem.quantity >= item.stock) {
+        showError(`Maximum stock limit reached! Only ${item.stock} ${item.stock === 1 ? 'item' : 'items'} available for "${item.name}"`);
+        return;
+      }
+      
       setCartItems(cartItems.map(cartItem => 
         cartItem.id === item.id 
           ? { ...cartItem, quantity: cartItem.quantity + 1 }
           : cartItem
       ));
+      
+      // Show info message when reaching max stock after this addition
+      if (existingItem.quantity + 1 === item.stock) {
+        showSuccess(`${item.name} added! Maximum available quantity (${item.stock}) now in cart`);
+        return;
+      }
     } else {
       setCartItems([...cartItems, { ...item, quantity: 1 }]);
+      
+      // Show info if adding single item that is the last one available
+      if (item.stock === 1) {
+        showSuccess(`${item.name} added! This is the last one available`);
+        return;
+      }
     }
     showSuccess(`${item.name} added to cart`);
   };
 
   const updateQuantity = (id, change) => {
-    setCartItems(cartItems.map(item => 
-      item.id === id 
-        ? { ...item, quantity: Math.max(0, item.quantity + change) }
-        : item
-    ).filter(item => item.quantity > 0));
+    const itemToUpdate = cartItems.find(item => item.id === id);
+    
+    setCartItems(cartItems.map(item => {
+      if (item.id === id) {
+        const newQuantity = item.quantity + change;
+        
+        // Prevent going below 0
+        if (newQuantity < 0) return item;
+        
+        // Check if exceeding available stock when increasing quantity
+        if (change > 0 && newQuantity > item.stock) {
+          showError(`Maximum stock limit reached! Only ${item.stock} ${item.stock === 1 ? 'item' : 'items'} available for "${item.name}"`);
+          return item;
+        }
+        
+        // Show info message when reaching max stock
+        if (change > 0 && newQuantity === item.stock) {
+          showSuccess(`Maximum available quantity (${item.stock}) added to cart`);
+        }
+        
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
   };
 
   const getTotalItems = () => cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -317,10 +361,109 @@ function Dashboard() {
           </select>
         </div>
 
+        {/* Stock Limit Alert Banner - CENTER DASHBOARD */}
+        {cartItems.some(item => item.quantity >= item.stock) && (
+          <div style={{
+            margin: '20px auto',
+            maxWidth: '900px',
+            padding: '16px 20px',
+            background: 'linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%)',
+            border: '3px solid #ff9800',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '15px',
+            boxShadow: '0 8px 24px rgba(255, 152, 0, 0.25)',
+            animation: 'slideDown 0.4s ease-out'
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)'
+            }}>
+              <svg style={{ width: '28px', height: '28px', color: 'white' }} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontWeight: '800', 
+                color: '#e65100', 
+                fontSize: '18px', 
+                marginBottom: '6px',
+                letterSpacing: '0.3px'
+              }}>
+                ⚠️ Maximum Stock Limit Reached!
+              </div>
+              <div style={{ 
+                fontSize: '14px', 
+                color: '#bf360c', 
+                lineHeight: '1.5',
+                fontWeight: '500'
+              }}>
+                {cartItems.filter(item => item.quantity >= item.stock).length === 1 
+                  ? (() => {
+                      const maxItem = cartItems.find(item => item.quantity >= item.stock);
+                      return `"${maxItem.name}" has reached its maximum available quantity of ${maxItem.stock} ${maxItem.stock === 1 ? 'item' : 'items'}. You cannot add more to your cart.`;
+                    })()
+                  : `${cartItems.filter(item => item.quantity >= item.stock).length} items in your cart have reached their maximum stock limits. Check the highlighted items below.`
+                }
+              </div>
+            </div>
+            <div style={{
+              padding: '8px 16px',
+              background: 'rgba(255, 152, 0, 0.15)',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '700',
+              color: '#e65100',
+              whiteSpace: 'nowrap'
+            }}>
+              {cartItems.filter(item => item.quantity >= item.stock).length} MAX
+            </div>
+          </div>
+        )}
+
         <div className="products-grid">
           {filteredItems.length > 0 ? (
-            filteredItems.map(item => (
-              <div key={item.id} className="product-card">
+            filteredItems.map(item => {
+              const cartItem = cartItems.find(ci => ci.id === item.id);
+              const isAtMaxStock = cartItem && cartItem.quantity >= item.stock;
+              
+              return (
+              <div key={item.id} className="product-card" style={{ position: 'relative' }}>
+                {/* Max Stock Badge */}
+                {isAtMaxStock && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+                    color: 'white',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    zIndex: 10,
+                    boxShadow: '0 4px 12px rgba(255, 107, 107, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    animation: 'pulse 2s ease-in-out infinite'
+                  }}>
+                    <svg style={{ width: '14px', height: '14px' }} viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                    MAX LIMIT
+                  </div>
+                )}
+                
                 <div className="product-img-box">
                   <img src={item.image_display_url || item.image_url || '/placeholder-food.jpg'} alt={item.name} className="product-img" />
                   {item.is_veg && <span className="veg-tag">VEG</span>}
@@ -365,7 +508,15 @@ function Dashboard() {
                           </svg>
                         </button>
                         <span className="qty-num">{cartItems.find(ci => ci.id === item.id)?.quantity}</span>
-                        <button className="qty-btn" onClick={() => updateQuantity(item.id, 1)}>
+                        <button 
+                          className="qty-btn" 
+                          onClick={() => updateQuantity(item.id, 1)}
+                          disabled={cartItems.find(ci => ci.id === item.id)?.quantity >= item.stock}
+                          style={{ 
+                            opacity: cartItems.find(ci => ci.id === item.id)?.quantity >= item.stock ? 0.5 : 1,
+                            cursor: cartItems.find(ci => ci.id === item.id)?.quantity >= item.stock ? 'not-allowed' : 'pointer'
+                          }}
+                        >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="5" x2="12" y2="19"/>
                             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -384,7 +535,8 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
-            ))
+              );
+            })
           ) : (
             <div className="empty-view">
               <svg className="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -430,6 +582,25 @@ function Dashboard() {
                   <div className="cart-item-info">
                     <h4 className="cart-item-name">{item.name}</h4>
                     <p className="cart-item-price">${parseFloat(item.price || 0).toFixed(2)}</p>
+                    {item.quantity >= item.stock && (
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px',
+                        marginTop: '4px',
+                        padding: '4px 8px',
+                        background: 'rgba(255, 107, 107, 0.15)',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 107, 107, 0.3)'
+                      }}>
+                        <svg style={{ width: '12px', height: '12px', color: '#ff6b6b' }} viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                        </svg>
+                        <span style={{ fontSize: '10px', color: '#ff6b6b', fontWeight: '600' }}>
+                          MAX STOCK ({item.stock})
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="cart-item-qty">
                     <button className="qty-small-btn" onClick={() => updateQuantity(item.id, -1)}>
@@ -438,7 +609,15 @@ function Dashboard() {
                       </svg>
                     </button>
                     <span>{item.quantity}</span>
-                    <button className="qty-small-btn" onClick={() => updateQuantity(item.id, 1)}>
+                    <button 
+                      className="qty-small-btn" 
+                      onClick={() => updateQuantity(item.id, 1)}
+                      disabled={item.quantity >= item.stock}
+                      style={{ 
+                        opacity: item.quantity >= item.stock ? 0.5 : 1,
+                        cursor: item.quantity >= item.stock ? 'not-allowed' : 'pointer'
+                      }}
+                    >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="12" y1="5" x2="12" y2="19"/>
                         <line x1="5" y1="12" x2="19" y2="12"/>

@@ -8,6 +8,14 @@ const cartReducer = (state, action) => {
       const existingItemIndex = state.items.findIndex(item => item.id === action.payload.id);
       
       if (existingItemIndex > -1) {
+        const existingItem = state.items[existingItemIndex];
+        
+        // Check if adding one more would exceed available stock
+        if (existingItem.quantity >= action.payload.stock) {
+          // Don't add more if stock limit reached
+          return state;
+        }
+        
         const updatedItems = [...state.items];
         updatedItems[existingItemIndex].quantity += 1;
         return {
@@ -17,6 +25,11 @@ const cartReducer = (state, action) => {
           totalAmount: state.totalAmount + action.payload.price
         };
       } else {
+        // Check if item has stock available
+        if (!action.payload.stock || action.payload.stock <= 0) {
+          return state;
+        }
+        
         return {
           ...state,
           items: [...state.items, { ...action.payload, quantity: 1 }],

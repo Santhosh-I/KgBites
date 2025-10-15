@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCart } from '../../contexts/CartContext';
+import { useToast } from './ToastProvider';
 import './FloatingCart.css';
 
 const FloatingCart = () => {
@@ -13,6 +14,25 @@ const FloatingCart = () => {
     removeItem, 
     clearCart 
   } = useCart();
+  
+  const { showError, showSuccess } = useToast();
+
+  const handleAddItem = (item) => {
+    // Check if adding one more would exceed available stock
+    if (item.quantity >= item.stock) {
+      showError(`Maximum stock limit reached! Only ${item.stock} ${item.stock === 1 ? 'item' : 'items'} available for "${item.name}"`);
+      return;
+    }
+    
+    // Show success message when reaching max stock
+    if (item.quantity + 1 === item.stock) {
+      addItem(item);
+      showSuccess(`Maximum available quantity (${item.stock}) now in cart`);
+      return;
+    }
+    
+    addItem(item);
+  };
 
   if (totalItems === 0) return null;
 
@@ -54,6 +74,11 @@ const FloatingCart = () => {
                     <h4>{item.name}</h4>
                     <p className="item-counter">{item.counter_name}</p>
                     <p className="item-price">₹{item.price}</p>
+                    {item.quantity >= item.stock && (
+                      <p style={{ fontSize: '11px', color: '#ff6b6b', marginTop: '2px' }}>
+                        Max stock reached
+                      </p>
+                    )}
                   </div>
                   
                   <div className="item-controls">
@@ -66,7 +91,12 @@ const FloatingCart = () => {
                     <span className="quantity">{item.quantity}</span>
                     <button 
                       className="quantity-btn"
-                      onClick={() => addItem(item)}
+                      onClick={() => handleAddItem(item)}
+                      disabled={item.quantity >= item.stock}
+                      style={{ 
+                        opacity: item.quantity >= item.stock ? 0.5 : 1,
+                        cursor: item.quantity >= item.stock ? 'not-allowed' : 'pointer'
+                      }}
                     >
                       +
                     </button>
