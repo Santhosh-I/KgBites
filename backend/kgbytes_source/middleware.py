@@ -84,14 +84,30 @@ class ErrorHandlingMiddleware(MiddlewareMixin):
 class RequestLoggingMiddleware(MiddlewareMixin):
     """
     Middleware to log API requests for monitoring and debugging.
+    Excludes high-frequency polling endpoints to reduce log spam.
     """
+    
+    # Endpoints to exclude from verbose logging (status checks, health checks, etc.)
+    EXCLUDED_PATHS = [
+        '/status/',  # OTP status checks
+        '/health/',  # Health checks
+        '/ping/',    # Ping endpoints
+    ]
+    
+    def _should_log_verbose(self, path: str) -> bool:
+        """Determine if this request should be logged verbosely."""
+        # Don't log status check endpoints (they poll every 50ms)
+        for excluded in self.EXCLUDED_PATHS:
+            if excluded in path:
+                return False
+        return True
     
     def process_request(self, request: HttpRequest) -> None:
         """Log incoming requests."""
         request.start_time = time.time()
         
-        # Log API requests
-        if request.path.startswith('/api/'):
+        # Only log non-polling API requests
+        if request.path.startswith('/api/') and self._should_log_verbose(request.path):
             logger.info(
                 f"API Request: {request.method} {request.path}",
                 extra={
@@ -106,16 +122,32 @@ class RequestLoggingMiddleware(MiddlewareMixin):
         """Log response information."""
         if hasattr(request, 'start_time') and request.path.startswith('/api/'):
             duration = time.time() - request.start_time
-            logger.info(
-                f"API Response: {request.method} {request.path} - {response.status_code} ({duration:.3f}s)",
-                extra={
-                    'method': request.method,
-                    'path': request.path,
-                    'status_code': response.status_code,
-                    'duration': duration,
-                    'user': request.user.username if hasattr(request, 'user') and request.user.is_authenticated else 'anonymous'
-                }
-            )
+            
+            # Only log verbose details for non-polling endpoints
+            if self._should_log_verbose(request.path):
+                # Log level based on status code
+                if response.status_code >= 500:
+                    log_level = logger.error
+                elif response.status_code >= 400:
+                    log_level = logger.warning
+                else:
+                    log_level = logger.info
+                
+                log_level(
+                    f"API Response: {request.method} {request.path} - {response.status_code} ({duration:.3f}s)",
+                    extra={
+                        'method': request.method,
+                        'path': request.path,
+                        'status_code': response.status_code,
+                        'duration': duration,
+                        'user': request.user.username if hasattr(request, 'user') and request.user.is_authenticated else 'anonymous'
+                    }
+                )
+            # For polling endpoints, only log slow requests or errors
+            elif duration > 1.0 or response.status_code >= 400:
+                logger.warning(
+                    f"Slow/Error polling request: {request.method} {request.path} - {response.status_code} ({duration:.3f}s)"
+                )
         
         return response
     

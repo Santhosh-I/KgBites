@@ -374,16 +374,41 @@ function Dashboard() {
     try {
       setOrderProcessing(true);
       
-      // Group items by counter
-      const itemsByCounter = groupItemsByCounter(cartItems);
-      const countersInvolved = Object.keys(itemsByCounter);
+      // Group items by counter (by counter ID for proper tracking)
+      const itemsByCounterId = {};
+      const counterIdToName = {};
+      
+      cartItems.forEach(item => {
+        const counterId = item.counter_id || item.counter?.id || 'unknown';
+        const counterName = item.counter_name || item.counter?.name || 'Unknown Counter';
+        
+        counterIdToName[counterId] = counterName;
+        
+        if (!itemsByCounterId[counterId]) {
+          itemsByCounterId[counterId] = [];
+        }
+        
+        itemsByCounterId[counterId].push({
+          id: item.id,
+          food_item_id: item.id,  // For stock deduction
+          name: item.name,
+          price: parseFloat(item.price || 0),
+          unit_price: parseFloat(item.price || 0),
+          quantity: item.quantity,
+          total_price: parseFloat(item.price || 0) * item.quantity,
+          image_url: item.image_display_url || item.image_url,
+          delivered: false
+        });
+      });
+      
+      const countersInvolved = Object.keys(itemsByCounterId).map(id => parseInt(id) || id);
       
       if (countersInvolved.length === 0) {
         showError('No valid counters found in cart');
         return;
       }
 
-      // Build order payload (sent to server to generate OTP code)
+      // Calculate totals
       let subtotal = 0;
       cartItems.forEach(item => {
         subtotal += parseFloat(item.price || 0) * (item.quantity || 0);
@@ -391,6 +416,7 @@ function Dashboard() {
       const taxAmount = Math.round(subtotal * 0.10 * 100) / 100;
       const totalAmount = subtotal + taxAmount;
 
+      // Build order payload with proper structure for counter-based delivery
       const payload = {
         student_name: userData.full_name || userData.name || 'Unknown Student',
         student_id: userData.id || userData.roll_number || userData.student_id || 'Unknown',
@@ -400,14 +426,19 @@ function Dashboard() {
         tax_amount: taxAmount,
         status: 'confirmed',
         created_at: new Date().toISOString(),
-        items_by_counter: itemsByCounter,
-        counters_involved: countersInvolved,
+        items_by_counter: itemsByCounterId,  // Now keyed by counter ID
+        counter_names: counterIdToName,       // Map of counter ID to name
+        counters_involved: countersInvolved,  // Array of counter IDs
         counters_completed: [],
         is_complete: false
       };
 
-      // Create OTP on server (cab-style)
+      console.log('Creating OTP with payload:', payload);
+
+      // Create OTP on server (cab-style) - this will also deduct stock immediately
       const otpRes = await orderService.createOtpOnServer(payload);
+
+      console.log('OTP created successfully:', otpRes);
 
       // Map server response to UI object
       const newOrder = {
@@ -415,6 +446,7 @@ function Dashboard() {
         orderCode: otpRes.code,
         studentName: otpRes.payload?.student_name || 'Student',
         itemsByCounter: otpRes.payload?.items_by_counter || {},
+        counterNames: otpRes.payload?.counter_names || {},
         countersInvolved: otpRes.payload?.counters_involved || [],
         countersCompleted: otpRes.payload?.counters_completed || [],
         isComplete: otpRes.payload?.is_complete || false,
@@ -439,6 +471,7 @@ function Dashboard() {
           status: 'confirmed',
           created_at: newOrder.createdAt.toISOString(),
           items_by_counter: newOrder.itemsByCounter,
+          counter_names: newOrder.counterNames,
           counters_involved: newOrder.countersInvolved,
           counters_completed: newOrder.countersCompleted,
           is_complete: newOrder.isComplete,
@@ -455,6 +488,9 @@ function Dashboard() {
       setShowOrderModal(true);
       setCartItems([]);
       setShowCart(false);
+      
+      // Refresh menu data to show updated stock
+      fetchMenuData();
       
       showSuccess(`Order confirmed! Your order code is: ${newOrder.orderCode}`);
       
@@ -1006,8 +1042,12 @@ function Dashboard() {
 
             <div className="order-counters-section">
               <h4>🏪 Visit These Counters ({(currentOrder.countersInvolved || []).length}):</h4>
-              {Object.entries(currentOrder.itemsByCounter || {}).map(([counterName, items]) => (
-                <div key={counterName} className="counter-section">
+              {Object.entries(currentOrder.itemsByCounter || {}).map(([counterId, items]) => {
+                // Get counter name from the counterNames map (counter ID -> counter name)
+                const counterName = currentOrder.counterNames?.[counterId] || `Counter ${counterId}`;
+                
+                return (
+                <div key={counterId} className="counter-section">
                   <div className="counter-header">
                     <h5>📋 {counterName}</h5>
                     <span className="items-count">
@@ -1025,7 +1065,8 @@ function Dashboard() {
                     ))}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="order-summary-section">

@@ -31,6 +31,17 @@ class OrderOTP(models.Model):
     code = models.CharField(max_length=8, unique=True, db_index=True)
     status = models.CharField(max_length=10, choices=OTP_STATUS, default='active', db_index=True)
     payload = JSONField(default=dict)  # Stores order details: items_by_counter, totals, student info, etc.
+    
+    # Counter-based delivery tracking
+    counters_delivered = JSONField(
+        default=dict, 
+        help_text='Tracks which counters have delivered their items: {counter_id: {delivered_at, delivered_by, item_ids}}'
+    )
+    all_items_delivered = models.BooleanField(
+        default=False, 
+        db_index=True, 
+        help_text='True when all items from all counters are delivered'
+    )
 
     # Audit / lifecycle fields
     generated_by = models.CharField(max_length=255, blank=True, null=True)
@@ -44,6 +55,7 @@ class OrderOTP(models.Model):
         indexes = [
             models.Index(fields=['code', 'status']),
             models.Index(fields=['expires_at', 'status']),
+            models.Index(fields=['all_items_delivered', 'status']),
         ]
 
     def __str__(self):
@@ -62,9 +74,44 @@ class OrderOTP(models.Model):
         return 'OR' + str(int(timezone.now().timestamp()))[-4:]
 
     def mark_used(self):
+        """Mark OTP as used - only when ALL counters have delivered"""
         self.status = 'used'
         self.used_at = timezone.now()
         self.save(update_fields=['status', 'used_at', 'updated_at'])
+    
+    def mark_counter_delivered(self, counter_id, staff_username, item_ids):
+        """Mark that a specific counter has delivered its items"""
+        from django.utils import timezone
+        
+        # Update counters_delivered
+        if not isinstance(self.counters_delivered, dict):
+            self.counters_delivered = {}
+        
+        self.counters_delivered[str(counter_id)] = {
+            'delivered_at': timezone.now().isoformat(),
+            'delivered_by': staff_username,
+            'item_ids': item_ids
+        }
+        
+        # Check if all counters have delivered
+        payload_counters = self.payload.get('counters_involved', [])
+        delivered_counter_ids = set(self.counters_delivered.keys())
+        expected_counter_ids = set(str(c) for c in payload_counters)
+        
+        self.all_items_delivered = delivered_counter_ids >= expected_counter_ids
+        
+        # If all delivered, mark as used
+        if self.all_items_delivered and self.status == 'active':
+            self.status = 'used'
+            self.used_at = timezone.now()
+        
+        self.save(update_fields=['counters_delivered', 'all_items_delivered', 'status', 'used_at', 'updated_at'])
+    
+    def has_counter_delivered(self, counter_id):
+        """Check if a specific counter has already delivered"""
+        if not isinstance(self.counters_delivered, dict):
+            return False
+        return str(counter_id) in self.counters_delivered
 
 
 class Order(models.Model):
@@ -130,6 +177,11 @@ class OrderItem(models.Model):
     # Special instructions for this item
     special_instructions = models.TextField(blank=True, null=True)
     
+    # Delivery tracking
+    delivered = models.BooleanField(default=False, db_index=True, help_text='Whether this item has been delivered')
+    delivered_at = models.DateTimeField(blank=True, null=True, db_index=True, help_text='When this item was delivered')
+    delivered_by = models.CharField(max_length=255, blank=True, null=True, help_text='Staff member who delivered this item')
+    
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -137,6 +189,7 @@ class OrderItem(models.Model):
             models.Index(fields=['order', 'food_item']),
             models.Index(fields=['food_item', 'created_at']),
             models.Index(fields=['created_at']),
+            models.Index(fields=['delivered', 'created_at']),
         ]
         ordering = ['-created_at']
 
@@ -155,3 +208,11 @@ class OrderItem(models.Model):
         # Auto-calculate total_price
         self.total_price = self.quantity * self.unit_price
         super().save(*args, **kwargs)
+    
+    def mark_delivered(self, staff_username):
+        """Mark this item as delivered"""
+        from django.utils import timezone
+        self.delivered = True
+        self.delivered_at = timezone.now()
+        self.delivered_by = staff_username
+        self.save(update_fields=['delivered', 'delivered_at', 'delivered_by'])

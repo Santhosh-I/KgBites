@@ -10,6 +10,14 @@ from .serializers import OrderSerializer, OrderCreateSerializer, OrderOTPSeriali
 from accounts.models import CanteenStaff
 from kgbytes_source.pagination import StandardPagination, LargePagination
 
+# Map CanteenStaff.counter TextChoices to menu.Counter IDs
+# This is needed because CanteenStaff.counter is a CharField, not a ForeignKey
+COUNTER_CHOICE_TO_ID = {
+    'VEG_MEALS': 1,         # Veg & Meals Counter
+    'BIRIYANI_CHINESE': 2,  # Biryani & Chinese Counter
+    'SNACKS': 3,            # Snacks Counter
+}
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
@@ -89,12 +97,62 @@ class OrderViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_order_otp(request):
-    """Student portal: create an OTP with order payload (code acts as OTP)."""
+    """
+    Student portal: create an OTP with order payload (code acts as OTP).
+    
+    This endpoint:
+    1. Creates an OTP with the order details
+    2. Immediately deducts stock from inventory
+    3. Returns the OTP code for the student
+    """
     try:
         serializer = CreateOrderOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         otp = serializer.save()
-        return Response(OrderOTPSerializer(otp).data, status=status.HTTP_201_CREATED)
+        
+        # Deduct stock immediately upon order confirmation
+        payload = otp.payload
+        items_by_counter = payload.get('items_by_counter', {})
+        
+        from menu.models import FoodItem
+        stock_errors = []
+        
+        for counter_id, items in items_by_counter.items():
+            for item in items:
+                food_item_id = item.get('food_item_id') or item.get('id')
+                quantity = item.get('quantity', 0)
+                
+                if not food_item_id:
+                    continue
+                
+                try:
+                    food_item = FoodItem.objects.get(id=food_item_id)
+                    
+                    # Check if sufficient stock is available
+                    if food_item.stock < quantity:
+                        stock_errors.append(f"{food_item.name}: Only {food_item.stock} available, requested {quantity}")
+                        continue
+                    
+                    # Deduct stock
+                    food_item.stock -= quantity
+                    food_item.save(update_fields=['stock'])
+                    
+                    # Mark unavailable if out of stock
+                    food_item.mark_unavailable_if_out_of_stock()
+                    
+                    print(f"✅ Stock deducted: {food_item.name} - {quantity} units (remaining: {food_item.stock})")
+                    
+                except FoodItem.DoesNotExist:
+                    stock_errors.append(f"Item ID {food_item_id} not found")
+                except Exception as e:
+                    stock_errors.append(f"Error processing item {food_item_id}: {str(e)}")
+        
+        # If there were stock errors, include them in response but don't fail the order
+        response_data = OrderOTPSerializer(otp).data
+        if stock_errors:
+            response_data['stock_warnings'] = stock_errors
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -155,7 +213,7 @@ def get_order_status_by_code(request, code: str):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def consume_order_code(request, code: str):
-    """Staff portal: mark code as used (consume OTP)."""
+    """DEPRECATED: Use deliver_counter_items instead for counter-based delivery"""
     try:
         otp = OrderOTP.objects.filter(code=code).first()
         if not otp:
@@ -168,6 +226,124 @@ def consume_order_code(request, code: str):
             return Response({'error': 'Order code already used'}, status=status.HTTP_409_CONFLICT)
         otp.mark_used()
         return Response(OrderOTPSerializer(otp).data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def deliver_counter_items(request, code: str):
+    """
+    Staff portal: Mark items delivered for a specific counter.
+    
+    This endpoint allows each counter staff to independently mark their items as delivered.
+    - The OTP can be used by multiple counters (once per counter)
+    - Each counter can only mark their own items
+    - Once all counters deliver, the OTP status becomes 'used'
+    
+    Request body:
+    {
+        "counter_id": 1,
+        "item_ids": [1, 2, 3]
+    }
+    """
+    try:
+        # Get staff info
+        try:
+            staff = CanteenStaff.objects.get(user=request.user)
+        except CanteenStaff.DoesNotExist:
+            return Response(
+                {'error': 'Access denied. Staff only.'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get OTP
+        otp = OrderOTP.objects.filter(code=code).first()
+        if not otp:
+            return Response({'error': 'Order code not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check expiry
+        if otp.expires_at < timezone.now():
+            if otp.status != 'expired':
+                otp.status = 'expired'
+                otp.save(update_fields=['status', 'updated_at'])
+            return Response({'error': 'Order code expired'}, status=status.HTTP_410_GONE)
+        
+        # Get counter_id from request
+        counter_id = request.data.get('counter_id')
+        item_ids = request.data.get('item_ids', [])
+        
+        if not counter_id:
+            return Response({'error': 'counter_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Map staff's counter choice to counter ID
+        # Note: staff.counter is a CharField (e.g., 'VEG_MEALS'), not a ForeignKey
+        staff_counter_id = COUNTER_CHOICE_TO_ID.get(staff.counter)
+        if not staff_counter_id:
+            return Response(
+                {'error': 'Staff counter not properly configured. Please contact admin.'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        # Verify staff has access to this counter
+        if staff_counter_id != int(counter_id):
+            return Response(
+                {'error': f'You can only deliver items from your assigned counter (ID: {staff_counter_id})'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if this counter has already delivered
+        if otp.has_counter_delivered(counter_id):
+            return Response(
+                {
+                    'error': 'Items already delivered for this counter',
+                    'message': f'✅ Items from this counter were already delivered'
+                }, 
+                status=status.HTTP_409_CONFLICT
+            )
+        
+        # Validate items belong to this counter
+        payload_items = otp.payload.get('items_by_counter', {}).get(str(counter_id), [])
+        payload_item_ids = [item.get('id') for item in payload_items]
+        
+        # Verify all requested items are from this counter
+        invalid_items = [item_id for item_id in item_ids if item_id not in payload_item_ids]
+        if invalid_items:
+            return Response(
+                {'error': f'Invalid item IDs for this counter: {invalid_items}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Mark counter as delivered
+        otp.mark_counter_delivered(
+            counter_id=counter_id,
+            staff_username=request.user.username,
+            item_ids=item_ids
+        )
+        
+        # Deduct stock for delivered items
+        from menu.models import FoodItem
+        for item in payload_items:
+            if item.get('id') in item_ids:
+                try:
+                    food_item = FoodItem.objects.get(id=item.get('food_item_id'))
+                    if food_item.stock >= item.get('quantity', 0):
+                        food_item.stock -= item.get('quantity', 0)
+                        food_item.save(update_fields=['stock'])
+                        # Mark unavailable if out of stock
+                        food_item.mark_unavailable_if_out_of_stock()
+                except FoodItem.DoesNotExist:
+                    pass
+        
+        return Response({
+            'success': True,
+            'message': 'Items delivered successfully',
+            'all_items_delivered': otp.all_items_delivered,
+            'counters_delivered': list(otp.counters_delivered.keys()),
+            'status': otp.status,
+            'otp': OrderOTPSerializer(otp).data
+        })
+        
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -197,15 +197,30 @@ const CounterInterface = () => {
       try {
         serverOtp = await orderService.fetchOrderByCodeFromServer(trimmedCode);
       } catch (e) {
-        console.warn('Server lookup failed:', e?.message);
-        if (e?.status === 404) {
+        console.error('=== DETAILED ERROR ===');
+        console.error('Error object:', e);
+        console.error('Error message:', e?.message);
+        console.error('Error status:', e?.status);
+        console.error('Error stack:', e?.stack);
+        console.error('=====================');
+        
+        if (e?.status === 401 || e?.status === 403) {
+          showError('🔒 Authentication failed! Please log out and log in again. Your session may have expired.');
+          // Optionally redirect to login after a delay
+          setTimeout(() => {
+            localStorage.clear();
+            window.location.href = '/';
+          }, 3000);
+        } else if (e?.status === 404) {
           showError('Order code not found');
         } else if (e?.status === 409) {
           showError('Order code already used');
         } else if (e?.status === 410) {
           showError('Order code expired');
+        } else if (e?.message?.includes('Failed to fetch') || e?.message?.includes('NetworkError')) {
+          showError('❌ Backend server not responding! Make sure Django is running on http://localhost:8000');
         } else {
-          showError('Failed to fetch order. Please try again.');
+          showError(`Failed to fetch order: ${e?.message || 'Unknown error'}. Check console for details.`);
         }
         setCurrentOrder(null);
         return;
@@ -213,6 +228,18 @@ const CounterInterface = () => {
 
       // Map server response to UI shape used by this component
       const payload = serverOtp.payload || {};
+      
+      // Convert counter IDs to counter names for display
+      const itemsByCounterName = {};
+      const counterNames = payload.counter_names || {};
+      const itemsByCounterId = payload.items_by_counter || {};
+      
+      // Transform from counter ID keys to counter name keys for UI compatibility
+      Object.entries(itemsByCounterId).forEach(([counterId, items]) => {
+        const counterName = counterNames[counterId] || `Counter ${counterId}`;
+        itemsByCounterName[counterName] = items;
+      });
+      
       const mapped = {
         order_code: serverOtp.code,
         otp_status: serverOtp.status,
@@ -223,11 +250,26 @@ const CounterInterface = () => {
         total_amount: payload.total_amount || 0,
         subtotal: payload.subtotal || 0,
         tax_amount: payload.tax_amount || 0,
-        items_by_counter: payload.items_by_counter || {},
-        counters_involved: payload.counters_involved || Object.keys(payload.items_by_counter || {}),
-        counters_completed: payload.counters_completed || [],
-        is_complete: payload.is_complete || false,
+        items_by_counter: itemsByCounterName,  // Now using counter names
+        counter_names: counterNames,           // Keep the mapping
+        counters_involved: payload.counters_involved || Object.keys(itemsByCounterId),
+        counters_delivered: serverOtp.counters_delivered || {},  // Counter IDs that have delivered
+        counters_completed: [],  // Will be populated based on counters_delivered
+        is_complete: serverOtp.all_items_delivered || false,
       };
+      
+      // Populate counters_completed from counters_delivered (convert IDs to names)
+      if (serverOtp.counters_delivered) {
+        const deliveredCounterIds = Object.keys(serverOtp.counters_delivered);
+        mapped.counters_completed = deliveredCounterIds.map(id => counterNames[id] || `Counter ${id}`);
+      }
+
+      console.log('=== ORDER MAPPED ===');
+      console.log('Server OTP:', serverOtp);
+      console.log('Mapped order:', mapped);
+      console.log('Items by counter:', mapped.items_by_counter);
+      console.log('Selected counter items:', mapped.items_by_counter[selectedCounter]);
+      console.log('====================');
 
       // Check if order is already complete
       if (mapped.is_complete) {
@@ -286,7 +328,7 @@ const CounterInterface = () => {
     setCheckedItems(newCheckedItems);
   };
 
-  // Mark items as delivered; if final counter, consume OTP on server
+  // Mark items as delivered using the new counter-based delivery endpoint
   const markAsDelivered = async () => {
     if (!currentOrder) {
       showError('No order loaded');
@@ -310,77 +352,114 @@ const CounterInterface = () => {
     try {
       setProcessingDelivery(true);
       
-      // Update in-memory order (do not rely on localStorage)
-      const updated = JSON.parse(JSON.stringify(currentOrder));
-      const deliveredIds = Array.from(checkedItems);
-      const counterItems = updated.items_by_counter[selectedCounter] || [];
-      updated.items_by_counter[selectedCounter] = counterItems.map(item => ({
-        ...item,
-        delivered: deliveredIds.includes(item.id) ? true : !!item.delivered
-      }));
+      // Get counter ID from the order payload's counter_names mapping
+      // This ensures we use the actual database IDs, not hardcoded values
+      let counterId = null;
       
-      if (!updated.counters_completed) updated.counters_completed = [];
-      if (!updated.counters_completed.includes(selectedCounter)) {
-        updated.counters_completed.push(selectedCounter);
-      }
-      
-      // Check if this is the final counter - if so, mark order as used (consume OTP)
-      const allCounters = Object.keys(updated.items_by_counter || {});
-      const isOrderComplete = allCounters.every(counter => updated.counters_completed.includes(counter));
-      updated.is_complete = isOrderComplete;
-
-      if (isOrderComplete) {
-        console.log('🎯 Final counter completed - consuming OTP on server');
-        try {
-          const consumed = await orderService.consumeOrderCode(updated.order_code);
-          updated.otp_status = consumed.status || 'used';
-          if (consumed.used_at) updated.used_at = consumed.used_at;
-          showSuccess(`Order ${updated.order_code} completed and OTP consumed! ✅`);
-        } catch (e) {
-          console.error('Failed to consume OTP on server:', e);
-          showError('Failed to consume OTP on server. Try again.');
+      if (currentOrder.counter_names) {
+        // Find counter ID by reverse-looking up the name
+        const counterIdEntry = Object.entries(currentOrder.counter_names).find(
+          ([id, name]) => name === selectedCounter
+        );
+        if (counterIdEntry) {
+          counterId = parseInt(counterIdEntry[0]);
         }
       }
       
-      // Get updated order
-  setCurrentOrder(updated);
-      
-      // For production, replace with actual API call:
-      /*
-      const response = await fetch(`http://127.0.0.1:8000/api/orders/${currentOrder.order_code}/deliver/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          counter: selectedCounter,
-          items: Array.from(checkedItems)
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setCurrentOrder(result);
+      // Fallback to hardcoded mapping if counter_names not available (legacy orders)
+      if (!counterId) {
+        const counterNameToId = {
+          'Veg & Meals': 1,
+          'Biriyani & Chinese': 2,
+          'Snacks': 3
+        };
+        counterId = counterNameToId[selectedCounter];
       }
-      */
-  setCheckedItems(new Set());
       
-      // Add to recent orders
-      setRecentOrders(prev => [
-        { 
-          orderCode: currentOrder.order_code, 
-          studentName: currentOrder.student_name,
-          counter: selectedCounter,
-          timestamp: new Date(),
-          itemCount: Array.from(checkedItems).length
-        },
-        ...prev.slice(0, 4) // Keep only 5 recent orders
-      ]);
+      if (!counterId) {
+        showError(`Invalid counter selected: ${selectedCounter}. Counter ID not found in order payload.`);
+        console.error('Counter mapping issue:', {
+          selectedCounter,
+          counter_names: currentOrder.counter_names,
+          items_by_counter: Object.keys(currentOrder.items_by_counter)
+        });
+        return;
+      }
       
-      showSuccess(`✅ Items delivered successfully for ${selectedCounter} counter!`);
+      console.log(`📍 Counter ID resolved: "${selectedCounter}" → ID ${counterId}`);
       
-      if (updated.is_complete) {
-        showSuccess('🎉 Order completed! All items have been delivered.');
+      const deliveredItemIds = Array.from(checkedItems);
+      
+      // Call the new counter-based delivery endpoint
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/api/orders/otp/code/${currentOrder.order_code}/deliver/`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Token ${localStorage.getItem('authToken') || localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              counter_id: counterId,
+              item_ids: deliveredItemIds
+            })
+          }
+        );
+        
+        if (response.ok) {
+          const result = await response.json();
+          
+          // Update local order state
+          const updated = { ...currentOrder };
+          updated.counters_completed = result.counters_delivered || [];
+          updated.is_complete = result.all_items_delivered || false;
+          updated.otp_status = result.status || updated.otp_status;
+          
+          // Mark items as delivered in local state
+          if (updated.items_by_counter[selectedCounter]) {
+            updated.items_by_counter[selectedCounter] = updated.items_by_counter[selectedCounter].map(item => ({
+              ...item,
+              delivered: deliveredItemIds.includes(item.id) ? true : !!item.delivered
+            }));
+          }
+          
+          setCurrentOrder(updated);
+          setCheckedItems(new Set());
+          
+          // Add to recent orders
+          setRecentOrders(prev => [
+            { 
+              orderCode: currentOrder.order_code, 
+              studentName: currentOrder.student_name,
+              counter: selectedCounter,
+              timestamp: new Date(),
+              itemCount: deliveredItemIds.length
+            },
+            ...prev.slice(0, 4)
+          ]);
+          
+          showSuccess(`✅ Items delivered successfully for ${selectedCounter} counter!`);
+          
+          if (result.all_items_delivered) {
+            showSuccess('🎉 Order completed! All items from all counters have been delivered.');
+          }
+        } else if (response.status === 409) {
+          showError('✅ Items already delivered for this counter');
+        } else if (response.status === 404) {
+          showError('Order code not found');
+        } else if (response.status === 410) {
+          showError('Order code expired');
+        } else if (response.status === 403) {
+          const errorData = await response.json();
+          showError(errorData.error || 'You can only deliver items from your assigned counter');
+        } else {
+          const errorData = await response.json();
+          showError(errorData.error || 'Failed to mark items as delivered');
+        }
+      } catch (fetchError) {
+        console.error('Network error during delivery:', fetchError);
+        showError('Network error. Please check your connection and try again.');
       }
       
     } catch (error) {
@@ -429,6 +508,17 @@ const CounterInterface = () => {
   const undeliveredItems = counterItems.filter(item => !item.delivered);
   const allItemsChecked = undeliveredItems.length > 0 && undeliveredItems.every(item => checkedItems.has(item.id));
   const isCounterCompleted = currentOrder?.counters_completed.includes(selectedCounter);
+
+  // Debug logging
+  if (currentOrder && counterItems.length > 0) {
+    console.log('=== RENDER DEBUG ===');
+    console.log('Counter items:', counterItems);
+    console.log('Undelivered items:', undeliveredItems);
+    console.log('All items checked:', allItemsChecked);
+    console.log('Is counter completed:', isCounterCompleted);
+    console.log('Checked items:', Array.from(checkedItems));
+    console.log('===================');
+  }
 
   return (
     <div className="counter-interface">
@@ -706,7 +796,7 @@ const CounterInterface = () => {
                             <span className="item-quantity">Qty: {item.quantity}</span>
                           </div>
                           <div className="item-price">
-                            ${(item.unit_price * item.quantity).toFixed(2)}
+                            ${((item.unit_price || item.price || item.total_price / item.quantity || 0) * item.quantity).toFixed(2)}
                           </div>
                         </div>
                         
