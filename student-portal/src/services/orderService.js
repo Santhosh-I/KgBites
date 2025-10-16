@@ -132,6 +132,12 @@ class OrderService {
 
   // Server: create OTP order from payload
   async createOtpOnServer(payload) {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (!token) {
+      const err = new Error('Not authenticated');
+      err.status = 401;
+      throw err;
+    }
     const res = await fetch(`${API_BASE_URL}/otp/create/`, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -146,6 +152,12 @@ class OrderService {
 
   // Server: fetch OTP by code (for student-side status sync)
   async fetchOtpByCode(orderCode) {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (!token) {
+      const err = new Error('Not authenticated');
+      err.status = 401;
+      throw err;
+    }
     const res = await fetch(`${API_BASE_URL}/otp/code/${orderCode}/`, {
       method: 'GET',
       headers: getAuthHeaders()
@@ -162,6 +174,10 @@ class OrderService {
   // Server: fetch only OTP status (always 200), avoids noisy 4xx for polling
   async fetchOtpStatus(orderCode) {
     try {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      if (!token) {
+        return { status: 'error', detail: 'Not authenticated' };
+      }
       const res = await fetch(`${API_BASE_URL}/otp/code/${orderCode}/status/`, {
         method: 'GET',
         headers: getAuthHeaders()

@@ -1,5 +1,6 @@
 # Environment-specific files
 venv/
+env/
 
 # Dependency directory
 node_modules/
@@ -7,6 +8,10 @@ node_modules/
 # Local environment variables
 .env
 .env.local
+
+# Local database
+db.sqlite3
+*.sqlite3
 
 # Vite cache
 .vite/

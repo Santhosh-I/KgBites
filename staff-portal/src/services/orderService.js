@@ -178,6 +178,13 @@ class OrderService {
 
   // Server: fetch order by code
   async fetchOrderByCodeFromServer(orderCode) {
+    // Proactively error if missing auth to surface clear 401 to UI
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (!token) {
+      const error = new Error('Not authenticated');
+      error.status = 401;
+      throw error;
+    }
     const res = await fetch(`${API_BASE_URL}/otp/code/${orderCode}/`, {
       method: 'GET',
       headers: getAuthHeaders()
@@ -193,6 +200,12 @@ class OrderService {
 
   // Server: consume code
   async consumeOrderCode(orderCode) {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (!token) {
+      const error = new Error('Not authenticated');
+      error.status = 401;
+      throw error;
+    }
     const res = await fetch(`${API_BASE_URL}/otp/code/${orderCode}/consume/`, {
       method: 'POST',
       headers: getAuthHeaders()

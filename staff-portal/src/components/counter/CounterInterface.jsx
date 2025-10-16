@@ -179,7 +179,7 @@ const CounterInterface = () => {
       return;
     }
 
-    try {
+      try {
       setLoading(true);
       
       // Debug: Check which orderService is being used
@@ -261,8 +261,14 @@ const CounterInterface = () => {
       setCheckedItems(new Set());
       showSuccess('Order loaded successfully!');
       
-    } catch (error) {
-      showError('Error fetching order. Please try again.');
+      } catch (error) {
+      if (error?.status === 401) {
+        showError('You are not logged in. Please sign in as staff.');
+        // Optional: trigger a redirect if router available
+        // window.location.href = '/login';
+      } else {
+        showError('Error fetching order. Please try again.');
+      }
       console.error('Fetch order error:', error);
     } finally {
       setLoading(false);

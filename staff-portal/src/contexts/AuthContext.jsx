@@ -21,7 +21,8 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('token');
+      // Prefer authToken but fall back to token for backward compatibility
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       const userType = localStorage.getItem('userType');
       
       if (token && userType === 'staff') {
@@ -39,6 +40,7 @@ export const AuthProvider = ({ children }) => {
         } else {
           // Token is invalid or user is not staff
           localStorage.removeItem('token');
+          localStorage.removeItem('authToken');
           localStorage.removeItem('userType');
           setUser(null);
           setIsAuthenticated(false);
@@ -69,8 +71,9 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         const data = await response.json();
         
-        // Store token and user type
-        localStorage.setItem('token', data.token);
+  // Store token and user type (write both keys for compatibility)
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('authToken', data.token);
         localStorage.setItem('userType', 'staff');
         
         // Set user state
