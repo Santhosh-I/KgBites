@@ -26,7 +26,7 @@ from kgbytes_source.cache import CacheManager
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([])  # Allow public access to menu data
 def get_menu_data(request: Request) -> Response:
     """
     Retrieve complete menu data for dashboard.

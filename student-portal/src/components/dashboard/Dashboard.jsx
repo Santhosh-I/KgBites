@@ -54,18 +54,18 @@ function Dashboard() {
       setLoading(true);
       const token = tokenService.getToken();
       
-      if (!token) {
-        console.warn('No token found, using fallback menu data');
-        setMenuData(getFallbackMenuData());
-        return;
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authorization header if token exists
+      if (token) {
+        headers['Authorization'] = `Token ${token}`;
       }
 
       const response = await fetch('http://127.0.0.1:8000/api/menu/data/', {
         method: 'GET',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
 
       if (response.ok) {
