@@ -17,7 +17,8 @@ urlpatterns = [
     path('otp/create/', views.create_order_otp, name='create_order_otp'),
     path('otp/code/<str:code>/', views.get_order_by_code, name='get_order_by_code'),
     path('otp/code/<str:code>/status/', views.get_order_status_by_code, name='get_order_status_by_code'),
-    path('otp/code/<str:code>/consume/', views.consume_order_code, name='consume_order_code'),
+    path('otp/code/<str:code>/consume/', views.consume_order_code, name='consume_order_code'),  # Deprecated
+    path('otp/code/<str:code>/deliver/', views.deliver_counter_items, name='deliver_counter_items'),  # New counter-based delivery
     
     # Orders CRUD
     path('', include(router.urls)),

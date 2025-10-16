@@ -291,27 +291,75 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'format': '{levelname} {asctime} {module} {message}',
             'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
         },
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
+        'console_debug': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+            'filters': ['require_debug_true'],
+        },
     },
     'loggers': {
+        # Django's built-in loggers
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
-        'kgbytes_source': {
+        'django.server': {
             'handlers': ['console'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': True,
+            'level': 'WARNING',  # Reduce server access log spam
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',  # Only log request errors
+            'propagate': False,
+        },
+        # Application loggers
+        'kgbytes_source': {
+            'handlers': ['console', 'console_debug'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'accounts': {
+            'handlers': ['console', 'console_debug'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'menu': {
+            'handlers': ['console', 'console_debug'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'orders': {
+            'handlers': ['console', 'console_debug'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
 }
+
