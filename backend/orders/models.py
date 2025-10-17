@@ -128,9 +128,42 @@ class Order(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, db_index=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
     
-    # Payment info
-    payment_method = models.CharField(max_length=50, default='cash', db_index=True)
-    payment_status = models.CharField(max_length=20, default='pending', db_index=True)
+    # Enhanced Payment info
+    PAYMENT_METHODS = [
+        ('wallet', 'Digital Wallet'),
+        ('cash', 'Cash Payment'),
+        ('upi', 'UPI Payment'),
+        ('card', 'Credit/Debit Card'),
+        ('campus_card', 'Campus ID Card'),
+    ]
+    
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('paid', 'Paid'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+        ('partial_refund', 'Partially Refunded'),
+    ]
+    
+    payment_method = models.CharField(
+        max_length=50, 
+        choices=PAYMENT_METHODS, 
+        default='cash', 
+        db_index=True
+    )
+    payment_status = models.CharField(
+        max_length=20, 
+        choices=PAYMENT_STATUS_CHOICES, 
+        default='pending', 
+        db_index=True
+    )
+    
+    # Payment tracking
+    payment_reference = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    refunded_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    payment_processed_at = models.DateTimeField(blank=True, null=True, db_index=True)
     
     # Special instructions
     notes = models.TextField(blank=True, null=True)

@@ -285,12 +285,16 @@ def deliver_counter_items(request, code: str):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
-        # Verify staff has access to this counter
-        if staff_counter_id != int(counter_id):
-            return Response(
-                {'error': f'You can only deliver items from your assigned counter (ID: {staff_counter_id})'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # Flexible counter access: Allow cross-counter help
+        # Staff can deliver from any counter, but log when they're helping other counters
+        is_primary_counter = staff_counter_id == int(counter_id)
+        if not is_primary_counter:
+            # Log cross-counter assistance for audit purposes
+            print(f"📝 Cross-counter assistance: {request.user.username} (assigned to counter {staff_counter_id}) helping with counter {counter_id}")
+            
+            # Optional: You can add additional checks here if needed
+            # For example, only allow during peak hours or with supervisor approval
+            # For now, we'll allow it to improve workflow flexibility
         
         # Check if this counter has already delivered
         if otp.has_counter_delivered(counter_id):
@@ -338,6 +342,9 @@ def deliver_counter_items(request, code: str):
         return Response({
             'success': True,
             'message': 'Items delivered successfully',
+            'cross_counter_help': not is_primary_counter,
+            'primary_counter_id': staff_counter_id,
+            'delivered_counter_id': int(counter_id),
             'all_items_delivered': otp.all_items_delivered,
             'counters_delivered': list(otp.counters_delivered.keys()),
             'status': otp.status,

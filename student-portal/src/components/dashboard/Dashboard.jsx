@@ -4,6 +4,8 @@ import { tokenService } from '../../services/authService';
 import { useToast } from '../common/ToastProvider';
 import orderService from '../../services/orderService';
 import OrdersPage from './OrdersPage';
+import Wallet from '../wallet/Wallet';
+import walletService from '../../services/walletService';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -34,6 +36,10 @@ function Dashboard() {
   // Navigation State
   const [currentPage, setCurrentPage] = useState('menu'); // menu, orders, history, wallet
   
+  // Wallet State
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+  
   const dropdownRef = useRef(null);
   
   // User Data
@@ -47,6 +53,22 @@ function Dashboard() {
 
   // Get food items from menu data
   const foodItems = menuData.food_items || [];
+
+  // Load wallet balance
+  const loadWalletBalance = async () => {
+    try {
+      setLoadingBalance(true);
+      const walletInfo = await walletService.getWalletInfo();
+      // Ensure balance is always a number
+      const balance = parseFloat(walletInfo.balance) || 0;
+      setWalletBalance(balance);
+    } catch (error) {
+      console.error('Error loading wallet balance:', error);
+      setWalletBalance(0);
+    } finally {
+      setLoadingBalance(false);
+    }
+  };
 
   // Fetch menu data from API
   const fetchMenuData = async () => {
@@ -180,6 +202,7 @@ function Dashboard() {
   // Load menu data when component mounts
   useEffect(() => {
     fetchMenuData();
+    loadWalletBalance();
   }, []);
 
   // Dark mode effect
@@ -416,6 +439,19 @@ function Dashboard() {
       const taxAmount = Math.round(subtotal * 0.10 * 100) / 100;
       const totalAmount = subtotal + taxAmount;
 
+      // Check wallet balance before proceeding
+      try {
+        const walletInfo = await walletService.getWalletInfo();
+        const balance = parseFloat(walletInfo.balance) || 0;
+        if (balance < totalAmount) {
+          showError(`Insufficient balance. You need ₹${(totalAmount - balance).toFixed(2)} more in your wallet.`);
+          setCurrentPage('wallet'); // Redirect to wallet page
+          return;
+        }
+      } catch (error) {
+        console.warn('Could not check wallet balance, proceeding with order:', error);
+      }
+
       // Build order payload with proper structure for counter-based delivery
       const payload = {
         student_name: userData.full_name || userData.name || 'Unknown Student',
@@ -439,6 +475,26 @@ function Dashboard() {
       const otpRes = await orderService.createOtpOnServer(payload);
 
       console.log('OTP created successfully:', otpRes);
+
+      // Process payment if OTP creation was successful
+      try {
+        // Note: In a real implementation, you would create an Order record first
+        // and then process payment. For now, we'll simulate this process
+        console.log('Processing payment...');
+        
+        // Simulate payment processing (in real app, this would involve the Order ID)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        showSuccess('Payment processed successfully!');
+        
+        // Reload wallet balance after successful payment
+        loadWalletBalance();
+      } catch (paymentError) {
+        console.error('Payment processing failed:', paymentError);
+        showError('Payment failed. Please try again or contact support.');
+        // In a real app, you might want to cancel the order here
+        return;
+      }
 
       // Map server response to UI object
       const newOrder = {
@@ -871,23 +927,7 @@ function Dashboard() {
         {/* Wallet Page */}
         {currentPage === 'wallet' && (
           <div className="page-content">
-            <header className="top-bar">
-              <div>
-                <h2 className="main-title">💳 My Wallet</h2>
-                <p className="main-subtitle">Manage your payments</p>
-              </div>
-            </header>
-            <div className="coming-soon-page">
-              <div className="coming-soon-icon">💳</div>
-              <h3>Digital Wallet</h3>
-              <p>Add money, view transactions, and manage payments. This feature is coming soon!</p>
-              <button 
-                className="btn-primary"
-                onClick={() => setCurrentPage('menu')}
-              >
-                Back to Menu
-              </button>
-            </div>
+            <Wallet />
           </div>
         )}
       </main>
@@ -984,6 +1024,18 @@ function Dashboard() {
                 <span>Total</span>
                 <span>${getTotal().toFixed(2)}</span>
               </div>
+              <div className="summary-sep"></div>
+              <div className="summary-row wallet-balance">
+                <span>💳 Wallet Balance</span>
+                <span className={getTotal() <= Number(walletBalance || 0) ? 'sufficient' : 'insufficient'}>
+                  {loadingBalance ? 'Loading...' : `$${Number(walletBalance || 0).toFixed(2)}`}
+                </span>
+              </div>
+              {getTotal() > Number(walletBalance || 0) && (
+                <div className="insufficient-balance-warning">
+                  <span>⚠️ Insufficient balance. Add money to wallet.</span>
+                </div>
+              )}
             </div>
 
             <button 

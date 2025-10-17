@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/ToastProvider';
 import ImageUpload from '../common/ImageUpload';
 import CounterInterface from '../counter/CounterInterface';
+import StaffPayments from '../payments/StaffPayments';
 import './StaffDashboard.css';
 
 // Item Card Component
@@ -655,6 +656,18 @@ function StaffDashboard() {
             <span>Counter</span>
           </button>
           <button 
+            className={`staff-menu-btn ${activeView === 'payments' ? 'active' : ''}`}
+            onClick={() => setActiveView('payments')}
+          >
+            <svg className="staff-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/>
+              <path d="M3 10h18"/>
+              <path d="M7 15h.01"/>
+              <path d="M11 15h.01"/>
+            </svg>
+            <span>Payments</span>
+          </button>
+          <button 
             className={`staff-menu-btn ${activeView === 'analytics' ? 'active' : ''}`}
             onClick={() => setActiveView('analytics')}
           >
@@ -705,12 +718,14 @@ function StaffDashboard() {
               {activeView === 'items' && '🍽️ Menu Items'}
               {activeView === 'orders' && '📋 Order Management'}
               {activeView === 'counter' && '🏪 Counter Interface'}
+              {activeView === 'payments' && '💳 Payment Management'}
               {activeView === 'analytics' && '📊 Analytics Dashboard'}
             </h1>
             <p className="staff-main-subtitle">
               {activeView === 'items' && 'Manage your restaurant menu items'}
               {activeView === 'orders' && 'Track and manage customer orders'}
               {activeView === 'counter' && 'Process order deliveries at your counter'}
+              {activeView === 'payments' && 'Monitor transactions and payment activities'}
               {activeView === 'analytics' && 'View performance insights'}
             </p>
           </div>
@@ -811,6 +826,12 @@ function StaffDashboard() {
           {activeView === 'counter' && (
             <div className="staff-counter-content">
               <CounterInterface />
+            </div>
+          )}
+
+          {activeView === 'payments' && (
+            <div className="staff-payments-content">
+              <StaffPayments />
             </div>
           )}
 

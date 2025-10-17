@@ -107,39 +107,7 @@ const CounterInterface = () => {
 
   // Cross-port sync removed; server is source of truth.
 
-  // Test function to create a sample order (for debugging)
-  const createTestOrder = () => {
-    const testOrder = {
-      order_code: 'TS1234',
-      student_name: 'Test Student',
-      student_id: 'TEST001',
-      student_email: 'test@example.com',
-      total_amount: 50.00,
-      subtotal: 45.00,
-      tax_amount: 5.00,
-      status: 'confirmed',
-      created_at: new Date().toISOString(),
-      items_by_counter: {
-        'Veg & Meals': [
-          { id: 1, name: 'Test Rice', quantity: 1, unit_price: 25.00, total_price: 25.00, delivered: false }
-        ],
-        'Snacks': [
-          { id: 2, name: 'Test Tea', quantity: 2, unit_price: 10.00, total_price: 20.00, delivered: false }
-        ]
-      },
-      counters_involved: ['Veg & Meals', 'Snacks'],
-      counters_completed: [],
-      is_complete: false
-    };
-    
-    const saved = orderService.saveOrder(testOrder);
-    if (saved) {
-      showSuccess('Test order TS1234 created successfully!');
-      console.log('Test order created:', testOrder);
-    } else {
-      showError('Failed to create test order');
-    }
-  };
+
 
   // Counter emojis for UI
   const counterEmojis = {
@@ -439,7 +407,13 @@ const CounterInterface = () => {
             ...prev.slice(0, 4)
           ]);
           
-          showSuccess(`✅ Items delivered successfully for ${selectedCounter} counter!`);
+          // Show appropriate success message based on cross-counter help
+          if (result.cross_counter_help) {
+            showSuccess(`✅ Items delivered successfully for ${selectedCounter} counter! (Cross-counter assistance)`);
+            console.log(`🤝 Cross-counter help: Delivered from counter ${result.delivered_counter_id} (assigned to counter ${result.primary_counter_id})`);
+          } else {
+            showSuccess(`✅ Items delivered successfully for ${selectedCounter} counter!`);
+          }
           
           if (result.all_items_delivered) {
             showSuccess('🎉 Order completed! All items from all counters have been delivered.');
@@ -542,18 +516,7 @@ const CounterInterface = () => {
               </svg>
               Reset
             </button>
-            <button 
-              className="refresh-btn"
-              onClick={createTestOrder}
-              title="Create Test Order"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                <path d="M2 17l10 5 10-5"/>
-                <path d="M2 12l10 5 10-5"/>
-              </svg>
-              Test Order
-            </button>
+
 
           </div>
         </div>
