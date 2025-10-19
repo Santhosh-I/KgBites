@@ -1,0 +1,314 @@
+/* ========== KGBITES ICON SYSTEM ========== */
+/* Unified icon system with consistent sizing and styling */
+
+:root {
+  /* Icon Sizes */
+  --icon-xs: 0.75rem;    /* 12px */
+  --icon-sm: 1rem;       /* 16px */
+  --icon-base: 1.25rem;  /* 20px */
+  --icon-lg: 1.5rem;     /* 24px */
+  --icon-xl: 2rem;       /* 32px */
+  --icon-2xl: 2.5rem;    /* 40px */
+  --icon-3xl: 3rem;      /* 48px */
+}
+
+/* ========== ICON BASE CLASS ========== */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-base);
+  height: var(--icon-base);
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: all var(--transition-fast);
+}
+
+/* Icon Sizes */
+.icon-xs { width: var(--icon-xs); height: var(--icon-xs); }
+.icon-sm { width: var(--icon-sm); height: var(--icon-sm); }
+.icon-base { width: var(--icon-base); height: var(--icon-base); }
+.icon-lg { width: var(--icon-lg); height: var(--icon-lg); }
+.icon-xl { width: var(--icon-xl); height: var(--icon-xl); }
+.icon-2xl { width: var(--icon-2xl); height: var(--icon-2xl); }
+.icon-3xl { width: var(--icon-3xl); height: var(--icon-3xl); }
+
+/* Icon Colors */
+.icon-primary { color: var(--text-primary); }
+.icon-secondary { color: var(--text-secondary); }
+.icon-brand { color: var(--brand-primary); }
+.icon-success { color: var(--success-color); }
+.icon-error { color: var(--error-color); }
+.icon-warning { color: var(--warning-color); }
+.icon-info { color: var(--info-color); }
+
+/* Icon Backgrounds */
+.icon-bg {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+}
+
+.icon-bg-brand {
+  background: rgba(var(--brand-primary-rgb), 0.1);
+  color: var(--brand-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+}
+
+.icon-bg-success {
+  background: rgba(var(--success-rgb), 0.1);
+  color: var(--success-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+}
+
+.icon-bg-error {
+  background: rgba(var(--error-rgb), 0.1);
+  color: var(--error-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+}
+
+/* Interactive Icons */
+.icon-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.icon-button:hover {
+  background: var(--bg-secondary);
+  transform: scale(1.05);
+}
+
+.icon-button:active {
+  transform: scale(0.95);
+}
+
+/* ========== EMOJI ICON SYSTEM ========== */
+/* Modern emoji-based icons for food service */
+
+.emoji-icon {
+  font-size: var(--icon-base);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-base);
+  height: var(--icon-base);
+  transition: all var(--transition-fast);
+}
+
+/* Emoji Icon Sizes */
+.emoji-icon-xs { font-size: var(--icon-xs); width: var(--icon-xs); height: var(--icon-xs); }
+.emoji-icon-sm { font-size: var(--icon-sm); width: var(--icon-sm); height: var(--icon-sm); }
+.emoji-icon-base { font-size: var(--icon-base); width: var(--icon-base); height: var(--icon-base); }
+.emoji-icon-lg { font-size: var(--icon-lg); width: var(--icon-lg); height: var(--icon-lg); }
+.emoji-icon-xl { font-size: var(--icon-xl); width: var(--icon-xl); height: var(--icon-xl); }
+.emoji-icon-2xl { font-size: var(--icon-2xl); width: var(--icon-2xl); height: var(--icon-2xl); }
+.emoji-icon-3xl { font-size: var(--icon-3xl); width: var(--icon-3xl); height: var(--icon-3xl); }
+
+/* Emoji Background Variants */
+.emoji-icon-bg {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  padding: var(--space-2);
+  border: 2px solid var(--border-color);
+}
+
+.emoji-icon-bg-brand {
+  background: rgba(var(--brand-primary-rgb), 0.1);
+  border-radius: var(--radius-full);
+  padding: var(--space-2);
+  border: 2px solid rgba(var(--brand-primary-rgb), 0.2);
+}
+
+/* Interactive Emoji Icons */
+.emoji-icon-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.emoji-icon-button:hover {
+  background: var(--bg-secondary);
+  border-color: rgba(var(--brand-primary-rgb), 0.2);
+  transform: scale(1.1);
+}
+
+.emoji-icon-button:active {
+  transform: scale(0.95);
+}
+
+/* ========== KGBITES SPECIFIC ICONS ========== */
+/* Food & Restaurant Icons */
+
+/* Food Categories */
+.icon-food::before { content: '🍽️'; }
+.icon-rice::before { content: '🍚'; }
+.icon-curry::before { content: '🍛'; }
+.icon-snacks::before { content: '🍪'; }
+.icon-drinks::before { content: '🥤'; }
+.icon-dessert::before { content: '🍰'; }
+.icon-breakfast::before { content: '🥞'; }
+.icon-lunch::before { content: '🍱'; }
+.icon-dinner::before { content: '🍽️'; }
+
+/* Restaurant Operations */
+.icon-menu::before { content: '📋'; }
+.icon-order::before { content: '📝'; }
+.icon-cooking::before { content: '👨‍🍳'; }
+.icon-ready::before { content: '✅'; }
+.icon-delivered::before { content: '🚀'; }
+.icon-counter::before { content: '🏪'; }
+.icon-staff::before { content: '👤'; }
+.icon-kitchen::before { content: '🍳'; }
+
+/* Payment & Wallet */
+.icon-wallet::before { content: '💰'; }
+.icon-payment::before { content: '💳'; }
+.icon-money::before { content: '💵'; }
+.icon-topup::before { content: '⬆️'; }
+.icon-balance::before { content: '⚖️'; }
+.icon-transaction::before { content: '💸'; }
+
+/* Status & Feedback */
+.icon-success::before { content: '✅'; }
+.icon-error::before { content: '❌'; }
+.icon-warning::before { content: '⚠️'; }
+.icon-info::before { content: 'ℹ️'; }
+.icon-loading::before { content: '⏳'; }
+.icon-pending::before { content: '⏰'; }
+
+/* Navigation & Actions */
+.icon-home::before { content: '🏠'; }
+.icon-search::before { content: '🔍'; }
+.icon-filter::before { content: '🔽'; }
+.icon-sort::before { content: '↕️'; }
+.icon-refresh::before { content: '🔄'; }
+.icon-settings::before { content: '⚙️'; }
+.icon-logout::before { content: '🚪'; }
+.icon-back::before { content: '⬅️'; }
+.icon-forward::before { content: '➡️'; }
+
+/* Quantity & Cart */
+.icon-add::before { content: '➕'; }
+.icon-remove::before { content: '➖'; }
+.icon-cart::before { content: '🛒'; }
+.icon-checkout::before { content: '🎯'; }
+.icon-quantity::before { content: '🔢'; }
+
+/* Time & Schedule */
+.icon-time::before { content: '🕒'; }
+.icon-calendar::before { content: '📅'; }
+.icon-schedule::before { content: '⏰'; }
+.icon-history::before { content: '📝'; }
+
+/* Communication */
+.icon-notification::before { content: '🔔'; }
+.icon-message::before { content: '💬'; }
+.icon-feedback::before { content: '📢'; }
+
+/* Base Icon Styles */
+[class*="icon-"]::before {
+  font-size: inherit;
+  line-height: 1;
+  margin-right: 0.5em;
+}
+
+/* Icon Only (no margin) */
+.icon-only [class*="icon-"]::before {
+  margin-right: 0;
+}
+
+/* ========== ICON ANIMATIONS ========== */
+.icon-spin {
+  animation: spin 1s linear infinite;
+}
+
+.icon-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.icon-bounce {
+  animation: bounce 1s infinite;
+}
+
+.icon-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* ========== USAGE EXAMPLES ========== */
+/*
+Usage Examples:
+
+1. Basic Icon:
+<span class="icon-food emoji-icon-lg"></span>
+
+2. Icon with Background:
+<span class="icon-wallet emoji-icon-bg-brand emoji-icon-xl"></span>
+
+3. Interactive Icon Button:
+<button class="emoji-icon-button">
+  <span class="icon-cart emoji-icon-lg"></span>
+</button>
+
+4. Icon with Text:
+<button class="btn">
+  <span class="icon-add"></span>
+  Add to Cart
+</button>
+
+5. Icon Only Button:
+<button class="btn icon-only">
+  <span class="icon-search"></span>
+</button>
+
+6. Animated Icon:
+<span class="icon-loading emoji-icon-lg icon-spin"></span>
+*/
